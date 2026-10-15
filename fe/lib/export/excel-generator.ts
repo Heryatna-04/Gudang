@@ -24,6 +24,7 @@ export function exportEnterpriseReportExcel(data: MultiSheetExportData, fileName
     const loan = data.loans.find((l) => l.employeeId === a.employeeId);
     return {
       Tanggal: a.attendanceDate,
+      Shift: a.shift || 'PAGI',
       Gudang: `Gudang ${a.warehouseId}`,
       Nama_Karyawan: a.employeeName || a.employeeId,
       Status_Kehadiran: a.status,

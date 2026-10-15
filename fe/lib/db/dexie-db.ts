@@ -35,6 +35,10 @@ export class DavidERPDatabase extends Dexie {
       stockMutations: 'id, mutationNumber, fromWarehouseId, toWarehouseId, status, createdAt',
       debts: 'id, type, entityName, status, dueDate',
     });
+
+    this.version(2).stores({
+      attendances: 'id, employeeId, attendanceDate, warehouseId, shift',
+    });
   }
 }
 

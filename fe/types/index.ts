@@ -4,6 +4,8 @@ export type UserRole = 'OWNER' | 'ADMIN';
 
 export type AttendanceStatus = 'PRESENT' | 'PERMISSION' | 'ABSENT';
 
+export type WorkShift = 'PAGI' | 'MALAM';
+
 export type OpexCategory = 'BENSIN_TRUK' | 'KARUNG_PLASTIK' | 'KAWAT_IKAT' | 'SERVIS_TIMBANGAN' | 'KONSUMSI_KULI' | 'LAINNYA';
 
 export type MutationStatus = 'DRAFT' | 'ON_DELIVERY' | 'RECEIVED' | 'CANCELLED';
@@ -106,6 +108,7 @@ export interface Employee {
   fullName: string;
   warehouseId: number;
   position: string;
+  phone?: string; // No WhatsApp Pekerja
   isActive: boolean;
   createdAt: string;
 }
@@ -117,8 +120,24 @@ export interface EmployeeLoan {
   warehouseId: number;
   loanDate: string;
   amount: number;
+  remainingAmount?: number; // Sisa kasbon yang belum dipotong gaji
   isDeducted: boolean;
   notes: string | null;
+  createdAt: string;
+}
+
+export interface PayrollRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  warehouseId: number;
+  paymentDate: string;
+  baseSalary: number; // Gaji kotor
+  loanDeduction: number; // Potongan kasbon dinamis (bisa sebagian)
+  netSalary: number; // Gaji bersih dibayar
+  remainingLoan: number; // Sisa hutang kasbon berjalan
+  notes: string | null;
+  recordedBy: string;
   createdAt: string;
 }
 
@@ -128,6 +147,7 @@ export interface AttendanceRecord {
   employeeName?: string;
   warehouseId: number;
   attendanceDate: string;
+  shift?: WorkShift;
   checkIn: string | null;
   checkOut: string | null;
   status: AttendanceStatus;

@@ -15,7 +15,7 @@ export function OpexManagement({ warehouseId, warehouseName, opexList, onAddOpex
   const [category, setCategory] = useState<OpexCategory>('BENSIN_TRUK');
   const [isCustomCategory, setIsCustomCategory] = useState<boolean>(false);
   const [customCategoryName, setCustomCategoryName] = useState<string>('');
-  const [amount, setAmount] = useState<number>(150000);
+  const [amount, setAmount] = useState<number | ''>(150000);
   const [description, setDescription] = useState<string>('Solar truk operasional');
 
   const filteredOpex = opexList.filter((o) => o.warehouseId === warehouseId);
@@ -23,14 +23,15 @@ export function OpexManagement({ warehouseId, warehouseName, opexList, onAddOpex
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount <= 0) return;
+    const finalAmount = amount === '' ? 0 : amount;
+    if (finalAmount <= 0) return;
 
     const newExpense: OpexExpense = {
       id: `opex-${Date.now()}`,
       warehouseId,
       category,
       customCategory: isCustomCategory ? customCategoryName : undefined,
-      amount,
+      amount: finalAmount,
       description,
       recordedBy: 'Admin Gudang',
       createdAt: new Date().toISOString(),
@@ -113,13 +114,29 @@ export function OpexManagement({ warehouseId, warehouseName, opexList, onAddOpex
               <label className="block text-xs font-bold text-slate-700 mb-1">Nominal (Rp)</label>
               <input
                 type="number"
-                min="1000"
+                min="0"
                 step="5000"
                 value={amount}
-                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                placeholder="0"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAmount(val === '' ? '' : parseFloat(val) || 0);
+                }}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-numeric font-black text-amber-700 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                 required
               />
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {[50000, 100000, 200000, 500000].map((quick) => (
+                  <button
+                    key={quick}
+                    type="button"
+                    onClick={() => setAmount(quick)}
+                    className="rounded bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-200 font-numeric cursor-pointer"
+                  >
+                    +Rp{quick.toLocaleString('id-ID')}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>

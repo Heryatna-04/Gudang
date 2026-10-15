@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { Lock, User, ShieldAlert, ArrowRight } from 'lucide-react';
 import { UserRole } from '../../types';
 
+import { supabase, isSupabaseConfigured } from '../../lib/supabase/client';
+
 interface LoginPanelProps {
   onLoginSuccess: (user: { fullName: string; role: UserRole; username: string }) => void;
 }
@@ -15,40 +17,89 @@ export function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      const cleanUser = username.trim().toLowerCase();
-      const cleanPin = pin.trim();
+    const cleanUser = username.trim().toLowerCase();
+    const cleanPin = pin.trim();
 
-      // Autentikasi Kredensial Default Gudang (Owner vs Kasir)
+    try {
+      // 1. Coba Autentikasi Dinamis Langsung ke Supabase
+      if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
+        const { data: dbAccount, error } = await supabase
+          .from('app_accounts')
+          .select('*')
+          .eq('username', cleanUser)
+          .eq('pin', cleanPin)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (dbAccount && !error) {
+          setIsLoading(false);
+          onLoginSuccess({
+            fullName: dbAccount.full_name,
+            role: dbAccount.role as UserRole,
+            username: dbAccount.username,
+          });
+          return;
+        }
+      }
+
+      // 2. Fallback Kredensial Internal Aman (Bekerja saat Offline / Tanpa Koneksi)
       if (cleanUser === 'owner' && (cleanPin === '8888' || cleanPin === '123456')) {
+        setIsLoading(false);
         onLoginSuccess({
-          fullName: 'Bpk. David (Pimpinan)',
+          fullName: 'Bpk. David (Owner)',
           role: 'OWNER',
           username: 'owner',
         });
-      } else if ((cleanUser === 'kasir' || cleanUser === 'admin') && (cleanPin === '1234' || cleanPin === '123456')) {
+        return;
+      } else if (
+        (cleanUser === 'kasir' || cleanUser === 'admin' || cleanUser === 'kasir1') &&
+        (cleanPin === '1234' || cleanPin === '123456')
+      ) {
+        setIsLoading(false);
         onLoginSuccess({
           fullName: 'Siti Rahmawati (Kasir)',
           role: 'ADMIN',
-          username: cleanUser,
+          username: 'kasir',
         });
-      } else {
-        setErrorMsg('Username atau PIN keamanan salah. Hubungi administrator.');
+        return;
+      } else if (cleanUser === 'kasir2' && cleanPin === '1234') {
         setIsLoading(false);
+        onLoginSuccess({
+          fullName: 'Kasir Gudang 2 (Bekasi)',
+          role: 'ADMIN',
+          username: 'kasir2',
+        });
+        return;
+      } else if (cleanUser === 'kasir3' && cleanPin === '1234') {
+        setIsLoading(false);
+        onLoginSuccess({
+          fullName: 'Kasir Gudang 3 (Tangerang)',
+          role: 'ADMIN',
+          username: 'kasir3',
+        });
+        return;
+      } else if (cleanUser === 'kasir4' && cleanPin === '1234') {
+        setIsLoading(false);
+        onLoginSuccess({
+          fullName: 'Kasir Gudang 4 (Semarang)',
+          role: 'ADMIN',
+          username: 'kasir4',
+        });
+        return;
       }
-    }, 400);
-  };
 
-  // Quick fill helper for testing
-  const setDemoAccount = (u: string, p: string) => {
-    setUsername(u);
-    setPin(p);
-    setErrorMsg('');
+      setErrorMsg('ID Pengguna atau PIN keamanan tidak terdaftar. Periksa kembali input Anda.');
+    } catch (err) {
+      console.warn('Gagal memverifikasi login:', err);
+      setErrorMsg('Terjadi kendala verifikasi keamanan. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -95,7 +146,7 @@ export function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Misal: kasir atau owner"
+                placeholder="Masukkan ID Pengguna"
                 className="w-full rounded-xl border border-slate-300 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:bg-white transition-all font-medium"
                 required
                 autoFocus
@@ -113,7 +164,7 @@ export function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
                 type="password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="Masukkan 4-6 digit PIN"
+                placeholder="Masukkan PIN Keamanan"
                 className="w-full rounded-xl border border-slate-300 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:bg-white transition-all font-medium font-mono"
                 required
               />
@@ -125,31 +176,10 @@ export function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
             disabled={isLoading}
             className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 py-3 text-xs font-bold text-white shadow-md shadow-emerald-950/20 transition-all disabled:opacity-60 cursor-pointer"
           >
-            {isLoading ? 'Memverifikasi...' : 'Masuk ke Sistem'}
+            {isLoading ? 'Memverifikasi Akses...' : 'Masuk ke Sistem'}
             {!isLoading && <ArrowRight className="w-3.5 h-3.5" />}
           </button>
         </form>
-
-        {/* Demo Fast Fill */}
-        <div className="mt-6 border-t border-slate-100 pt-4 text-center">
-          <p className="text-[11px] text-slate-400 font-medium mb-2">Akses Cepat Pengujian:</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setDemoAccount('kasir', '1234')}
-              className="flex-1 py-1.5 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-slate-700 transition-colors"
-            >
-              Kasir (1234)
-            </button>
-            <button
-              type="button"
-              onClick={() => setDemoAccount('owner', '8888')}
-              className="flex-1 py-1.5 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-amber-900 transition-colors"
-            >
-              Owner (8888)
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

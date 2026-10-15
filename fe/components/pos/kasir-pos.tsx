@@ -53,11 +53,8 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
   const [customSellerName, setCustomSellerName] = useState<string>('');
   const [isPartner, setIsPartner] = useState<boolean>(true);
 
-  // Komoditas + Opsi Komoditas Bebas
+  // Komoditas Master (Dikelola khusus oleh Owner)
   const [selectedProductId, setSelectedProductId] = useState<string>(products[0]?.id || '');
-  const [isCustomProduct, setIsCustomProduct] = useState<boolean>(false);
-  const [customProductName, setCustomProductName] = useState<string>('');
-  const [customPricePerKg, setCustomPricePerKg] = useState<number>(5000);
 
   // Potongan kotoran (Refaksi)
   const [refactionType, setRefactionType] = useState<'kg' | 'pct'>('kg');
@@ -131,19 +128,15 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
     setRecoveredDraftFound(false);
   };
 
-  // Detail produk aktif
+  // Detail produk aktif (terkunci sesuai penetapan Owner)
   const activeProduct = products.find((p) => p.id === selectedProductId) || products[0];
-  const unitPrice = isCustomProduct
-    ? customPricePerKg
-    : activeProduct
+  const unitPrice = activeProduct
     ? isPartner
       ? activeProduct.pricePartner
       : activeProduct.priceRegular
     : 0;
 
-  const currentProductName = isCustomProduct
-    ? customProductName || 'Barang Campur / Bebas'
-    : activeProduct?.name || 'Komoditas';
+  const currentProductName = activeProduct?.name || 'Komoditas';
 
   // Perhitungan berat & subtotal
   const grossWeight = currentWeight;
@@ -158,12 +151,12 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
   const underpaidAmount = cashGiven > 0 && cashGiven < totalBillToPay ? totalBillToPay - cashGiven : 0;
 
   const handleAddItemToCart = () => {
-    if (netWeight <= 0) return;
+    if (netWeight <= 0 || !activeProduct) return;
 
     const newItem: ScaleTransactionItem = {
       id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       transactionId: '',
-      productId: isCustomProduct ? 'custom-prod' : activeProduct.id,
+      productId: activeProduct.id,
       productName: currentProductName,
       grossWeightKg: grossWeight,
       refactionKg: refactionType === 'kg' ? refactionValue : 0,
@@ -176,10 +169,6 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
     setCartItems((prev) => [...prev, newItem]);
     resetTare();
     setRefactionValue(0);
-    if (isCustomProduct) {
-      setIsCustomProduct(false);
-      setCustomProductName('');
-    }
   };
 
   const handleRemoveItem = (id: string) => {
@@ -272,16 +261,16 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
         {/* Kolom Kiri: Layar Timbangan Digital & Input */}
         <div className="space-y-5 lg:col-span-7">
           {/* Timbangan Box */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-xs transition-colors">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800 pb-3">
             <div className="flex items-center gap-2">
-              <Scale className="h-5 w-5 text-emerald-800" />
-              <span className="text-sm font-black text-slate-900 tracking-tight">TIMBANGAN DIGITAL (ALEXA BFS)</span>
+              <Scale className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
+              <span className="text-sm font-black text-slate-900 dark:text-zinc-100 tracking-tight">TIMBANGAN DIGITAL (ALEXA BFS)</span>
               <span
                 className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                   isMock
-                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                    : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60'
+                    : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60'
                 }`}
               >
                 {isMock ? 'Simulasi Virtual' : 'Serial Port RS-232'}
@@ -292,14 +281,14 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
               {isMock ? (
                 <button
                   onClick={connectHardware}
-                  className="rounded-lg bg-slate-100 border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                  className="rounded-lg bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800"
                 >
                   Hubungkan Port Kabel
                 </button>
               ) : (
                 <button
                   onClick={disconnectHardware}
-                  className="rounded-lg bg-red-100 border border-red-300 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
+                  className="rounded-lg bg-red-100 dark:bg-rose-950/80 border border-red-300 dark:border-rose-900/60 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-rose-300 hover:bg-red-200 dark:hover:bg-rose-900"
                 >
                   Putus Koneksi
                 </button>
@@ -307,56 +296,69 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
             </div>
           </div>
 
-          {/* Big Digital Scale Display - Forest Green & Navy Accent */}
-          <div className="my-5 flex flex-col items-center justify-center rounded-xl border border-slate-300 bg-gradient-to-b from-slate-50 to-emerald-50/40 py-6 text-slate-900 shadow-inner">
-            <div className="text-xs uppercase tracking-widest font-bold text-slate-500">Berat Timbangan Saat Ini</div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-numeric text-6xl font-black tracking-tight text-emerald-900">
-                {currentWeight.toFixed(2)}
-              </span>
-              <span className="text-2xl font-black text-amber-700">KG</span>
+          {/* Big Digital Scale Display - Input Dinamis & Real-time Stream */}
+          <div className="my-5 flex flex-col items-center justify-center rounded-xl border border-slate-300 dark:border-zinc-800 bg-gradient-to-b from-slate-50 to-emerald-50/40 dark:from-black dark:to-black dark:bg-black py-5 text-slate-900 dark:text-zinc-100 shadow-inner transition-colors">
+            <div className="text-[11px] uppercase tracking-widest font-black text-slate-500 dark:text-zinc-400 mb-1">
+              Berat Timbangan (Ketik Dinamis / Auto-Stream)
             </div>
-            <div className="mt-1 text-xs font-medium text-slate-500">
-              {portInfo || 'Stream data aktif'}
+            <div className="flex items-center justify-center gap-2">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={currentWeight === 0 ? '' : currentWeight}
+                placeholder="0.00"
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setSimulatedWeight(isNaN(val) ? 0 : Math.max(0, val));
+                }}
+                className="font-numeric text-6xl font-black tracking-tight text-emerald-900 dark:text-emerald-400 text-center bg-transparent border-b-2 border-dashed border-emerald-400 dark:border-emerald-600 focus:border-emerald-700 focus:outline-none w-64 max-w-full"
+                title="Ketik berat timbangan dinamis di sini"
+              />
+              <span className="text-2xl font-black text-amber-700 dark:text-amber-400">KG</span>
+            </div>
+            <div className="mt-2 text-[11px] font-semibold text-slate-500 dark:text-zinc-400 flex items-center gap-2">
+              <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800/60">Ketik Dinamis</span>
+              <span>{portInfo || 'Ketik langsung angka berat atau gunakan tombol cepat / slider'}</span>
             </div>
           </div>
 
-          {/* Virtual Scale Slider (Bila kabel belum dicolok) */}
-          {isMock && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-amber-950">
-                <span>Simulasi Berat Timbangan (Slider)</span>
-                <span className="font-numeric">{currentWeight.toFixed(2)} Kg</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="500"
-                step="0.5"
-                value={currentWeight}
-                onChange={(e) => setSimulatedWeight(parseFloat(e.target.value))}
-                className="w-full accent-emerald-800 cursor-pointer"
-              />
-              <div className="flex flex-wrap gap-1.5 items-center">
-                {[5, 12.5, 25, 50, 100, 250].map((w) => (
-                  <button
-                    key={w}
-                    onClick={() => setSimulatedWeight(w)}
-                    className="rounded bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-amber-100"
-                  >
-                    +{w}kg
-                  </button>
-                ))}
-                <button
-                  onClick={resetTare}
-                  className="flex items-center gap-1 rounded bg-slate-900 px-3 py-1 text-xs text-amber-300 hover:bg-slate-800 font-bold ml-auto shadow-xs"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  Nol-kan / Tare (0 Kg)
-                </button>
-              </div>
+          {/* Kontrol Cepat Berat & Slider */}
+          <div className="rounded-xl border border-amber-200 dark:border-zinc-800 bg-amber-50/60 dark:bg-black p-3.5 space-y-2 transition-colors">
+            <div className="flex items-center justify-between text-xs font-bold text-amber-950 dark:text-amber-400">
+              <span>Pengaturan Cepat Berat Timbangan</span>
+              <span className="font-numeric">{currentWeight.toFixed(2)} Kg</span>
             </div>
-          )}
+            <input
+              type="range"
+              min="0"
+              max="500"
+              step="0.5"
+              value={currentWeight}
+              onChange={(e) => setSimulatedWeight(parseFloat(e.target.value))}
+              className="w-full accent-emerald-800 cursor-pointer"
+            />
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {[5, 12.5, 25, 50, 100, 250].map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => setSimulatedWeight(w)}
+                  className="rounded bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-amber-100"
+                >
+                  +{w}kg
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={resetTare}
+                className="flex items-center gap-1 rounded bg-slate-900 px-3 py-1 text-xs text-amber-300 hover:bg-slate-800 font-bold ml-auto shadow-xs"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Nol-kan / Tare (0 Kg)
+              </button>
+            </div>
+          </div>
 
           {/* Form Input Detail Transaksi */}
           <div className="mt-5 space-y-4">
@@ -429,68 +431,40 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
               </div>
             </div>
 
-            {/* Komoditas dengan Pilihan Grid Cepat + Input Bebas */}
+            {/* Komoditas dengan Pilihan Grid Cepat (Dikelola Khusus Oleh Owner) */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-slate-700">Komoditas Logam / Rongsok</label>
-                <button
-                  type="button"
-                  onClick={() => setIsCustomProduct(!isCustomProduct)}
-                  className="text-[11px] font-bold text-emerald-800 hover:underline"
-                >
-                  {isCustomProduct ? 'Pilih dari Master' : '+ Input Komoditas Bebas'}
-                </button>
+                <span className="text-[11px] font-semibold text-slate-500 italic">
+                  Harga & master komoditas diatur oleh Owner
+                </span>
               </div>
 
-              {isCustomProduct ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-xl border border-emerald-300 bg-emerald-50/50">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Nama Barang Baru</label>
-                    <input
-                      type="text"
-                      value={customProductName}
-                      onChange={(e) => setCustomProductName(e.target.value)}
-                      placeholder="Misal: Besi Pipa Tebal Campur"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Harga Beli per Kg (Rp)</label>
-                    <input
-                      type="number"
-                      value={customPricePerKg}
-                      onChange={(e) => setCustomPricePerKg(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-h-48 overflow-y-auto pr-1">
-                  {products.map((p) => {
-                    const price = isPartner ? p.pricePartner : p.priceRegular;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setSelectedProductId(p.id)}
-                        className={`rounded-xl p-2.5 text-left border transition-all ${
-                          p.id === selectedProductId
-                            ? 'bg-emerald-50 border-emerald-700 shadow-xs ring-1 ring-emerald-600'
-                            : 'bg-white border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        <div className="text-xs font-extrabold text-slate-900 truncate">{p.name}</div>
-                        <div className="mt-1 flex items-baseline justify-between text-[11px]">
-                          <span className="text-slate-500 font-medium">{p.category.replace('_', ' ')}</span>
-                          <span className="font-numeric font-black text-emerald-800">
-                            Rp{price.toLocaleString('id-ID')}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-h-48 overflow-y-auto pr-1">
+                {products.map((p) => {
+                  const price = isPartner ? p.pricePartner : p.priceRegular;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedProductId(p.id)}
+                      className={`rounded-xl p-2.5 text-left border transition-all ${
+                        p.id === selectedProductId
+                          ? 'bg-emerald-50 border-emerald-700 shadow-xs ring-1 ring-emerald-600'
+                          : 'bg-white border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="text-xs font-extrabold text-slate-900 truncate">{p.name}</div>
+                      <div className="mt-1 flex items-baseline justify-between text-[11px]">
+                        <span className="text-slate-500 font-medium">{p.category.replace('_', ' ')}</span>
+                        <span className="font-numeric font-black text-emerald-800">
+                          Rp{price.toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Potongan Kotoran (Refaksi) */}
@@ -552,42 +526,42 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
 
       {/* Kolom Kanan: Keranjang Nota & Estimasi Uang Kasir */}
       <div className="space-y-5 lg:col-span-5">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm transition-colors">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-800" />
-              <h2 className="text-sm font-extrabold text-slate-900">KERANJANG TIMBANGAN (NOTA)</h2>
+              <CheckCircle2 className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">KERANJANG TIMBANGAN (NOTA)</h2>
             </div>
-            <span className="text-xs font-bold text-slate-500">{cartItems.length} Item</span>
+            <span className="text-xs font-bold text-slate-500 dark:text-zinc-400">{cartItems.length} Item</span>
           </div>
 
           {/* List Barang di Nota */}
           <div className="my-3 max-h-56 space-y-2 overflow-y-auto pr-1">
             {cartItems.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400 font-medium">
+              <div className="py-8 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
                 Belum ada barang di nota. Timbang dan klik 'Masukkan ke Nota'.
               </div>
             ) : (
               cartItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs"
+                  className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-3 text-xs transition-colors"
                 >
                   <div className="flex-1 pr-2">
-                    <div className="font-bold text-slate-900">{item.productName}</div>
-                    <div className="text-[11px] text-slate-500 font-numeric">
+                    <div className="font-bold text-slate-900 dark:text-zinc-100">{item.productName}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-numeric">
                       {item.netWeightKg} Kg × Rp{item.pricePerKg.toLocaleString('id-ID')}
                       {item.refactionKg > 0 && ` (Potong ${item.refactionKg}kg)`}
                       {item.refactionPct > 0 && ` (Potong ${item.refactionPct}%)`}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-numeric font-black text-emerald-800">
+                    <div className="font-numeric font-black text-emerald-800 dark:text-emerald-400">
                       Rp{item.subtotal.toLocaleString('id-ID')}
                     </div>
                     <button
                       onClick={() => handleRemoveItem(item.id)}
-                      className="mt-1 text-[11px] font-bold text-red-600 hover:text-red-700"
+                      className="mt-1 text-[11px] font-bold text-red-600 dark:text-rose-400 hover:text-red-700 dark:hover:text-rose-300"
                     >
                       Hapus
                     </button>
@@ -598,19 +572,19 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
           </div>
 
           {/* Total Tagihan Timbangan (Kas Keluar) */}
-          <div className="border-t border-slate-100 pt-3">
-            <div className="flex items-center justify-between text-xs text-slate-600">
+          <div className="border-t border-slate-100 dark:border-zinc-800 pt-3">
+            <div className="flex items-center justify-between text-xs text-slate-600 dark:text-zinc-400">
               <span className="font-semibold">Total Biaya Belanja (Uang Keluar):</span>
-              <span className="font-numeric text-xl font-black text-amber-700">
+              <span className="font-numeric text-xl font-black text-amber-700 dark:text-amber-400">
                 Rp{totalBillToPay.toLocaleString('id-ID')}
               </span>
             </div>
           </div>
 
           {/* Estimasi Kasir Uang Masuk / Pembayaran & Kembalian */}
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-              <Banknote className="h-4 w-4 text-emerald-800" />
+          <div className="mt-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-4 space-y-3 transition-colors">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-zinc-100">
+              <Banknote className="h-4 w-4 text-emerald-800 dark:text-emerald-400" />
               <span>Estimasi Uang Diserahkan & Kembalian</span>
             </div>
 

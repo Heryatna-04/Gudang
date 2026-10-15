@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
 
 :root {
   /* Palette Green Cycle Kuningan: Forest Green, Golden Ochre, Deep Navy & Warm Off-White */
@@ -18,6 +19,208 @@
   --deep-navy: #0f172a; /* #1e293b / #0f172a Navy */
   --deep-navy-light: #f8fafc;
   --deep-navy-border: #cbd5e1;
+}
+
+.dark {
+  --background: #000000; 
+  --foreground: #f4f4f5;
+  --surface: #000000;
+  --surface-border: #27272a;
+  
+  --forest-green: #10b981;
+  --forest-green-light: #052e16;
+  --forest-green-border: #047857;
+
+  --gold-ochre: #f59e0b;
+  --gold-ochre-light: #451a03;
+  --gold-ochre-border: #b45309;
+
+  --deep-navy: #f4f4f5;
+  --deep-navy-light: #18181b;
+  --deep-navy-border: #27272a;
+  color-scheme: dark;
+}
+
+html.dark, html.dark body {
+  background-color: #000000;
+  color: #f4f4f5;
+}
+
+/* ==========================================================================
+   GLOBAL DARK MODE - PURE BLACK CARD INTERIOR & SURFACES (#000000)
+   ========================================================================== */
+
+/* 1. All main cards and surface panels: 100% black interior */
+html.dark [class*="rounded-2xl"]:not(button):not(a),
+.dark [class*="rounded-2xl"]:not(button):not(a),
+html.dark [class*="rounded-3xl"]:not(button):not(a),
+.dark [class*="rounded-3xl"]:not(button):not(a),
+html.dark .bg-white:not(button):not(a),
+.dark .bg-white:not(button):not(a) {
+  background-color: #000000 !important;
+  color: #f4f4f5;
+}
+
+/* 2. Sub-cards, inner boxes, list items, and status containers */
+html.dark .bg-slate-50,
+.dark .bg-slate-50,
+html.dark .bg-slate-100,
+.dark .bg-slate-100,
+html.dark .bg-slate-200\/60,
+.dark .bg-slate-200\/60,
+html.dark .bg-emerald-50,
+.dark .bg-emerald-50,
+html.dark [class*="bg-emerald-50"],
+.dark [class*="bg-emerald-50"],
+html.dark .bg-amber-50,
+.dark .bg-amber-50,
+html.dark [class*="bg-amber-50"],
+.dark [class*="bg-amber-50"],
+html.dark .bg-indigo-50,
+.dark .bg-indigo-50,
+html.dark [class*="bg-indigo-50"],
+.dark [class*="bg-indigo-50"],
+html.dark .bg-blue-50,
+.dark .bg-blue-50,
+html.dark .bg-red-50,
+.dark .bg-red-50,
+html.dark .bg-rose-50,
+.dark .bg-rose-50 {
+  background-color: #000000 !important;
+}
+
+/* 3. Strip all background gradients in dark mode to stay pitch black */
+html.dark .bg-gradient-to-b,
+.dark .bg-gradient-to-b,
+html.dark .bg-gradient-to-r,
+.dark .bg-gradient-to-r,
+html.dark .bg-gradient-to-br,
+.dark .bg-gradient-to-br,
+html.dark .bg-gradient-to-t,
+.dark .bg-gradient-to-t {
+  background-image: none !important;
+  background-color: #000000 !important;
+}
+
+/* 4. Card and container borders: dark zinc */
+html.dark .border-slate-100,
+.dark .border-slate-100,
+html.dark .border-slate-200,
+.dark .border-slate-200,
+html.dark .border-slate-300,
+.dark .border-slate-300,
+html.dark .border-slate-400,
+.dark .border-slate-400,
+html.dark .border-amber-200,
+.dark .border-amber-200,
+html.dark .border-amber-300,
+.dark .border-amber-300,
+html.dark .border-emerald-200,
+.dark .border-emerald-200,
+html.dark .border-emerald-300,
+.dark .border-emerald-300 {
+  border-color: #27272a !important;
+}
+
+html.dark .divide-slate-100 > * + *,
+.dark .divide-slate-100 > * + *,
+html.dark .divide-slate-200 > * + *,
+.dark .divide-slate-200 > * + * {
+  border-color: #27272a !important;
+}
+
+/* 5. Ghost / Secondary buttons that were white in daylight */
+html.dark button.bg-white,
+.dark button.bg-white,
+html.dark a.bg-white,
+.dark a.bg-white {
+  background-color: #000000 !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark button.bg-white:hover,
+.dark button.bg-white:hover,
+html.dark a.bg-white:hover,
+.dark a.bg-white:hover {
+  background-color: #18181b !important;
+}
+
+/* 6. Form Inputs & Selects inside cards */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not(.bg-transparent),
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not(.bg-transparent),
+html.dark select,
+.dark select,
+html.dark textarea,
+.dark textarea {
+  background-color: #000000 !important;
+  color: #f4f4f5 !important;
+  border-color: #27272a !important;
+}
+
+html.dark select option,
+.dark select option {
+  background-color: #000000 !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark input::placeholder,
+.dark input::placeholder,
+html.dark textarea::placeholder,
+.dark textarea::placeholder {
+  color: #71717a !important;
+}
+
+/* 7. Typography High Contrast for dark card interior */
+html.dark .text-slate-900,
+.dark .text-slate-900,
+html.dark .text-slate-800,
+.dark .text-slate-800 {
+  color: #f4f4f5 !important;
+}
+
+html.dark .text-slate-700,
+.dark .text-slate-700 {
+  color: #e4e4e7 !important;
+}
+
+html.dark .text-slate-600,
+.dark .text-slate-600,
+html.dark .text-slate-500,
+.dark .text-slate-500 {
+  color: #a1a1aa !important;
+}
+
+html.dark .text-slate-400,
+.dark .text-slate-400 {
+  color: #71717a !important;
+}
+
+html.dark .text-amber-950,
+.dark .text-amber-950 {
+  color: #fef3c7 !important;
+}
+
+html.dark .text-amber-900,
+.dark .text-amber-900 {
+  color: #fde68a !important;
+}
+
+html.dark .text-amber-800,
+.dark .text-amber-800 {
+  color: #fbbf24 !important;
+}
+
+html.dark .text-emerald-950,
+.dark .text-emerald-950,
+html.dark .text-emerald-900,
+.dark .text-emerald-900 {
+  color: #6ee7b7 !important;
+}
+
+html.dark .text-emerald-800,
+.dark .text-emerald-800 {
+  color: #34d399 !important;
 }
 
 body {
@@ -55,4 +258,20 @@ body {
 /* Custom Dropdown & Input styling */
 select, input, textarea {
   accent-color: #166534;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #27272a;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+.dark select, .dark input, .dark textarea {
+  accent-color: #10b981;
 }

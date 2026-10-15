@@ -29,7 +29,7 @@ export function HeaderNav({
   ];
 
   return (
-    <header className="border-b border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100">
+    <header className="border-b border-zinc-800 bg-black px-4 py-3 text-zinc-100">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         {/* Brand & Warehouse Selector */}
         <div className="flex items-center gap-3">

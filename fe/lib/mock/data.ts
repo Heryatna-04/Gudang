@@ -12,12 +12,9 @@ import {
   FactorySale,
 } from '../../types';
 
-// Nama Gudang disederhanakan menjadi Gudang 1, Gudang 2, Gudang 3, Gudang 4
+// Konfigurasi Operasional: Gudang 1
 export const MOCK_WAREHOUSES: Warehouse[] = [
-  { id: 1, name: 'Gudang 1', address: 'Area Operasional 1', createdAt: '2026-01-01T00:00:00Z' },
-  { id: 2, name: 'Gudang 2', address: 'Area Operasional 2', createdAt: '2026-01-01T00:00:00Z' },
-  { id: 3, name: 'Gudang 3', address: 'Area Operasional 3', createdAt: '2026-01-01T00:00:00Z' },
-  { id: 4, name: 'Gudang 4', address: 'Area Operasional 4', createdAt: '2026-01-01T00:00:00Z' },
+  { id: 1, name: 'Gudang 1', address: 'Area Operasional Pusat', createdAt: '2026-01-01T00:00:00Z' },
 ];
 
 export const MOCK_PRODUCTS: Product[] = [
@@ -264,8 +261,9 @@ const generate50Employees = (): Employee[] => {
   return names.map((name, index) => ({
     id: `emp-${index + 1}`,
     fullName: name,
-    warehouseId: (index % 4) + 1, // Menyebar rata di Gudang 1, 2, 3, 4 (12-13 orang per gudang)
+    warehouseId: 1, // Beroperasi di Gudang 1
     position: index % 3 === 0 ? 'Tukang Timbang & Sortir' : index % 3 === 1 ? 'Tenaga Bongkar Muat' : 'Operator Alat Berat',
+    phone: `0812-${Math.floor(1000 + index * 37)}-${String(1000 + index * 13).slice(-4)}`,
     isActive: true,
     createdAt: '2026-01-01T00:00:00Z',
   }));
@@ -274,8 +272,8 @@ const generate50Employees = (): Employee[] => {
 export const MOCK_EMPLOYEES: Employee[] = generate50Employees();
 
 export const MOCK_EMPLOYEE_LOANS: EmployeeLoan[] = [
-  { id: 'loan-1', employeeId: 'emp-1', employeeName: 'Rahmat Hidayat', warehouseId: 1, loanDate: '2026-09-22', amount: 250000, isDeducted: false, notes: 'Iuran sekolah', createdAt: '2026-09-22T08:30:00Z' },
-  { id: 'loan-2', employeeId: 'emp-4', employeeName: 'Saepul Bahri', warehouseId: 1, loanDate: '2026-09-24', amount: 150000, isDeducted: false, notes: 'Perbaikan motor', createdAt: '2026-09-24T14:15:00Z' },
+  { id: 'loan-1', employeeId: 'emp-1', employeeName: 'Rahmat Hidayat', warehouseId: 1, loanDate: '2026-09-22', amount: 250000, remainingAmount: 250000, isDeducted: false, notes: 'Iuran sekolah', createdAt: '2026-09-22T08:30:00Z' },
+  { id: 'loan-2', employeeId: 'emp-4', employeeName: 'Saepul Bahri', warehouseId: 1, loanDate: '2026-09-24', amount: 150000, remainingAmount: 150000, isDeducted: false, notes: 'Perbaikan motor', createdAt: '2026-09-24T14:15:00Z' },
 ];
 
 export const MOCK_ATTENDANCES: AttendanceRecord[] = MOCK_EMPLOYEES.map((emp) => ({
@@ -284,6 +282,7 @@ export const MOCK_ATTENDANCES: AttendanceRecord[] = MOCK_EMPLOYEES.map((emp) => 
   employeeName: emp.fullName,
   warehouseId: emp.warehouseId,
   attendanceDate: '2026-09-26',
+  shift: 'PAGI',
   checkIn: '2026-09-26T06:50:00Z',
   checkOut: null,
   status: 'PRESENT', // Default hadir semua agar admin hanya perlu tap yang izin/alfa
