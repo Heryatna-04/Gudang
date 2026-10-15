@@ -10,6 +10,7 @@ import { OwnerDashboard } from '../components/owner/owner-dashboard';
 import { OpexManagement } from '../components/opex/opex-management';
 import { StockMutationManagement } from '../components/mutation/stock-mutation';
 import { DebtReceivableManagement } from '../components/debt/debt-receivable';
+import { EmployeeManagement } from '../components/employees/employee-management';
 import {
   MOCK_WAREHOUSES,
   MOCK_PRODUCTS,
@@ -839,6 +840,19 @@ export default function Home() {
     success('Harga komoditas berhasil diperbarui oleh Owner', 'Update Harga');
   };
 
+  const handleAddEmployee = async (newEmp: Employee) => {
+    setEmployees((prev) => [newEmp, ...prev]);
+    await OfflineSyncService.saveEmployee(newEmp);
+    success(`Pegawai ${newEmp.fullName} (${newEmp.position}) berhasil didaftarkan`, 'Pegawai Baru');
+  };
+
+  const handleDeleteEmployee = async (empId: string) => {
+    const emp = employees.find((e) => e.id === empId);
+    setEmployees((prev) => prev.filter((e) => e.id !== empId));
+    await OfflineSyncService.deleteEmployee(empId);
+    success(`Data pegawai ${emp?.fullName || ''} berhasil dihapus dari sistem`, 'Pegawai Dihapus');
+  };
+
   const getTabTitle = () => {
     switch (activeTab) {
       case 'pos':
@@ -855,6 +869,8 @@ export default function Home() {
         return activeRole === 'OWNER'
           ? 'Absensi, Kasbon & Penggajian Karyawan'
           : 'Absensi Karyawan Harian (Shift Pagi & Malam)';
+      case 'employees':
+        return 'Master Kelola Pegawai & Identitas Kasbon (Khusus Owner)';
       case 'debts':
         return 'Manajemen Hutang & Piutang (AP / AR)';
       case 'owner':
@@ -1031,6 +1047,27 @@ export default function Home() {
               activeRole={activeRole}
               isDark={isDark}
             />
+          )}
+
+          {activeTab === 'employees' && (
+            activeRole === 'OWNER' ? (
+              <EmployeeManagement
+                employees={employees}
+                loans={loans}
+                warehouses={MOCK_WAREHOUSES}
+                currentWarehouseId={activeWarehouseId}
+                onAddEmployee={handleAddEmployee}
+                onDeleteEmployee={handleDeleteEmployee}
+                isDark={isDark}
+              />
+            ) : (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center text-red-800 font-sans">
+                <h3 className="text-base font-extrabold">AKSES TERKUNCI</h3>
+                <p className="mt-1 text-xs text-red-600">
+                  Fitur Master Kelola Pegawai hanya dapat diakses oleh akun Owner.
+                </p>
+              </div>
+            )
           )}
 
           {activeTab === 'debts' && (

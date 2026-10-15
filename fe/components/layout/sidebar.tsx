@@ -11,6 +11,7 @@ import {
   BadgeDollarSign,
   LogOut,
   ShieldCheck,
+  UserPlus,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -79,6 +80,13 @@ export function Sidebar({
       icon: Users,
       roleRequired: 'ALL',
       description: activeRole === 'OWNER' ? 'Karyawan harian & kasbon' : 'Check-in shift pagi & malam',
+    },
+    {
+      id: 'employees',
+      label: 'Kelola Pegawai',
+      icon: UserPlus,
+      roleRequired: 'OWNER',
+      description: 'Tambah, hapus & identitas kasbon',
     },
     {
       id: 'debts',

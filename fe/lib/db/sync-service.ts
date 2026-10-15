@@ -7,6 +7,7 @@ import {
   OpexExpense,
   AttendanceRecord,
   Product,
+  Employee,
   EmployeeLoan,
   PayrollRecord,
   DebtRecord,
@@ -544,5 +545,55 @@ export class OfflineSyncService {
     }
 
     return syncedCount;
+  }
+
+  /**
+   * Simpan / Tambah Data Pegawai
+   */
+  static async saveEmployee(emp: Employee): Promise<boolean> {
+    try {
+      await localDB.employees.put(emp);
+    } catch (e) {
+      console.warn('[Sync] Gagal simpan employee di Dexie:', e);
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from('employees').upsert({
+          id: emp.id,
+          warehouse_id: emp.warehouseId,
+          full_name: emp.fullName,
+          position: emp.position,
+          phone: emp.phone,
+          is_active: emp.isActive,
+          created_at: emp.createdAt,
+        });
+        return !error;
+      } catch (err) {
+        console.warn('[Sync] Gagal simpan employee ke Supabase:', err);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Hapus Data Pegawai
+   */
+  static async deleteEmployee(empId: string): Promise<boolean> {
+    try {
+      await localDB.employees.delete(empId);
+    } catch (e) {
+      console.warn('[Sync] Gagal hapus employee di Dexie:', e);
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from('employees').delete().eq('id', empId);
+        return !error;
+      } catch (err) {
+        console.warn('[Sync] Gagal hapus employee di Supabase:', err);
+      }
+    }
+    return false;
   }
 }
