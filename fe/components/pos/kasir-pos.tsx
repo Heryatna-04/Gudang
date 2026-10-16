@@ -503,17 +503,11 @@ export function KasirPos({
 
             {/* Komoditas dengan Pilihan Grid Cepat (Dikelola Khusus Oleh Owner) */}
             <div>
-              <div className="flex flex-wrap items-center justify-between gap-1 mb-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Komoditas Logam / Rongsok</label>
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                  <span>Stok Gudang:</span>
-                  <span className="font-numeric font-black">{activeProduct?.currentStockKg?.toLocaleString('id-ID') || 0} Kg</span>
-                  {netWeight > 0 && (
-                    <span className="text-amber-700 dark:text-amber-400 font-bold ml-1">
-                      (+{netWeight} Kg → {(Number(activeProduct?.currentStockKg || 0) + netWeight).toFixed(1)} Kg Siap Jual)
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Pilih Komoditas Logam / Rongsok</label>
+                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-400">
+                  {activeProduct?.name || 'Belum dipilih'}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-h-52 overflow-y-auto pr-1">
@@ -535,13 +529,7 @@ export function KasirPos({
                       <div className="mt-1 flex items-baseline justify-between text-[11px]">
                         <span className="text-slate-500 dark:text-zinc-400 font-medium">{p.category.replace('_', ' ')}</span>
                         <span className="font-numeric font-black text-emerald-800 dark:text-emerald-400">
-                          Rp{price.toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                      <div className="mt-1.5 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800 pt-1 text-[10px]">
-                        <span className="text-slate-400 dark:text-zinc-500">Stok Siap Jual:</span>
-                        <span className="font-numeric font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                          {p.currentStockKg.toLocaleString('id-ID')} kg
+                          Rp{price.toLocaleString('id-ID')}/kg
                         </span>
                       </div>
                     </button>

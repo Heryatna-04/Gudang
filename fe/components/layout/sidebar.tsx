@@ -48,10 +48,10 @@ export function Sidebar({
     },
     {
       id: 'sales',
-      label: 'Penjualan Stok',
+      label: 'Inventaris & Penjualan Stok',
       icon: BadgeDollarSign,
-      roleRequired: 'ALL',
-      description: 'Kas masuk pabrik & eceran',
+      roleRequired: 'OWNER',
+      description: 'Inventaris siap jual & kas pabrik',
     },
     {
       id: 'shifts',
@@ -114,6 +114,7 @@ export function Sidebar({
   const handleLogout = () => {
     if (confirm('Keluar dari sistem Green Cycle Kuningan?')) {
       if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('gc_kuningan_auth_user');
         localStorage.removeItem('gc_kuningan_auth_user');
         window.location.reload();
       }

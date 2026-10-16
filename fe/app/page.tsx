@@ -41,7 +41,7 @@ import {
   PayrollRecord,
   Employee,
 } from '../types';
-import { Sparkles, Sun, Moon } from 'lucide-react';
+import { Sparkles, Sun, Moon, LogOut } from 'lucide-react';
 import { OfflineSyncService } from '../lib/db/sync-service';
 import { localDB } from '../lib/db/dexie-db';
 import { LoginPanel } from '../components/auth/login-panel';
@@ -51,24 +51,21 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase/client';
 export default function Home() {
   const { success, info } = useToast();
   
-  // Theme State
+  // Theme State: Default selalu Light Mode setiap kali masuk website
   const [isDark, setIsDark] = useState<boolean>(false);
 
   React.useEffect(() => {
     try {
-      const savedTheme = localStorage.getItem('gc_theme');
-      if (savedTheme === 'dark') {
-        setIsDark(true);
-        document.documentElement.classList.add('dark');
-      } else if (savedTheme === 'light') {
-        setIsDark(false);
+      // Selalu mulai dengan Light Mode setiap kali masuk website
+      setIsDark(false);
+      if (typeof document !== 'undefined') {
         document.documentElement.classList.remove('dark');
-      } else if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setIsDark(true);
-        document.documentElement.classList.add('dark');
+      }
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('gc_theme');
       }
     } catch (e) {
-      console.warn('Gagal membaca preferensi tema:', e);
+      console.warn('Gagal mengatur tema default light:', e);
     }
   }, []);
 
@@ -78,20 +75,19 @@ export default function Home() {
       try {
         if (next) {
           document.documentElement.classList.add('dark');
-          localStorage.setItem('gc_theme', 'dark');
         } else {
           document.documentElement.classList.remove('dark');
-          localStorage.setItem('gc_theme', 'light');
         }
       } catch (e) {
-        console.warn('Gagal menyimpan tema:', e);
+        console.warn('Gagal mengubah preferensi tema:', e);
       }
       return next;
     });
   };
   
-  // Auth State
+  // Auth State (Wajib login terlebih dahulu saat membuka website)
   const [currentUser, setCurrentUser] = useState<{ fullName: string; role: UserRole; username: string } | null>(null);
+  const [isAuthChecked, setIsAuthChecked] = useState<boolean>(false);
   const [activeRole, setActiveRole] = useState<UserRole>('ADMIN');
   const [activeWarehouseId, setActiveWarehouseId] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<string>('pos');
@@ -116,14 +112,24 @@ export default function Home() {
   // Inisialisasi: Cek session user, baca lokal Dexie & sinkronisasi Supabase Real-Time
   React.useEffect(() => {
     try {
-      const savedUser = localStorage.getItem('gc_kuningan_auth_user');
-      if (savedUser) {
-        const parsed = JSON.parse(savedUser);
+      // Wajib login: gunakan sessionStorage agar setiap kunjungan baru wajib login terlebih dahulu
+      const sessionUser = typeof window !== 'undefined' ? sessionStorage.getItem('gc_kuningan_auth_user') : null;
+      if (sessionUser) {
+        const parsed = JSON.parse(sessionUser);
         setCurrentUser(parsed);
         setActiveRole(parsed.role);
+      } else {
+        // Hapus sisa legacy localStorage agar tidak bypass login
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('gc_kuningan_auth_user');
+        }
+        setCurrentUser(null);
       }
     } catch (e) {
       console.warn('Gagal membaca sesi lokal:', e);
+      setCurrentUser(null);
+    } finally {
+      setIsAuthChecked(true);
     }
 
     // 1. Muat data cepat dari IndexedDB lokal
@@ -505,9 +511,35 @@ export default function Home() {
   const handleLoginSuccess = (user: { fullName: string; role: UserRole; username: string }) => {
     setCurrentUser(user);
     setActiveRole(user.role);
-    localStorage.setItem('gc_kuningan_auth_user', JSON.stringify(user));
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('gc_kuningan_auth_user', JSON.stringify(user));
+      localStorage.removeItem('gc_kuningan_auth_user');
+    }
+    if (user.role === 'ADMIN') {
+      setActiveTab('pos');
+    }
     success(`Selamat datang, ${user.fullName}`, 'Login Berhasil');
   };
+
+  const handleLogout = () => {
+    if (confirm('Keluar dari sistem Green Cycle Kuningan?')) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('gc_kuningan_auth_user');
+        localStorage.removeItem('gc_kuningan_auth_user');
+      }
+      setCurrentUser(null);
+      setActiveRole('ADMIN');
+      setActiveTab('pos');
+      info('Anda telah keluar dari sistem.', 'Logout Berhasil');
+    }
+  };
+
+  // Guard role: Jika role kasir (ADMIN), kunci akses agar tidak bisa membuka tab khusus Owner
+  React.useEffect(() => {
+    if (activeRole === 'ADMIN' && (activeTab === 'sales' || activeTab === 'owner' || activeTab === 'employees' || activeTab === 'debts')) {
+      setActiveTab('pos');
+    }
+  }, [activeRole, activeTab]);
 
   // Kas keluar belanja timbangan pada shift aktif gudang ini
   const totalExpenseToday = transactions
@@ -889,7 +921,7 @@ export default function Home() {
       case 'pos':
         return 'Kasir Timbangan Digital & Struk';
       case 'sales':
-        return 'Penjualan Stok Gudang (Kas Masuk)';
+        return 'Inventaris & Penjualan Stok Gudang (Khusus Owner)';
       case 'shifts':
         return 'Manajemen Shift & Rekonsiliasi Kasir';
       case 'opex':
@@ -912,8 +944,8 @@ export default function Home() {
   };
 
   // Jika belum login, tampilkan Panel Login
-  if (!currentUser) {
-    return <LoginPanel onLoginSuccess={handleLoginSuccess} />;
+  if (!isAuthChecked || !currentUser) {
+    return <LoginPanel onLoginSuccess={handleLoginSuccess} isDark={isDark} onToggleTheme={toggleTheme} />;
   }
 
   return (
@@ -1003,6 +1035,21 @@ export default function Home() {
                 <span>Executive Owner Mode</span>
               </div>
             )}
+
+            {/* Tombol Logout Cepat di Header */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Keluar dari Akun (Logout)"
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold border transition-colors cursor-pointer ${
+                isDark
+                  ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-red-400 hover:border-red-900'
+                  : 'bg-slate-100 border-slate-300 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
+              }`}
+            >
+              <LogOut className="h-3 w-3" />
+              <span className="hidden sm:inline">Keluar</span>
+            </button>
           </div>
         </header>
 
@@ -1021,13 +1068,22 @@ export default function Home() {
           )}
 
           {activeTab === 'sales' && (
-            <WarehouseSalesManagement
-              currentWarehouseId={activeWarehouseId}
-              warehouseName={activeWarehouse.name}
-              products={products}
-              salesList={salesList}
-              onAddSale={handleAddSale}
-            />
+            activeRole === 'OWNER' ? (
+              <WarehouseSalesManagement
+                currentWarehouseId={activeWarehouseId}
+                warehouseName={activeWarehouse.name}
+                products={products}
+                salesList={salesList}
+                onAddSale={handleAddSale}
+              />
+            ) : (
+              <div className="rounded-2xl border border-red-200 dark:border-zinc-800 bg-red-50 dark:bg-black p-12 text-center text-red-800 dark:text-red-400 font-sans">
+                <h3 className="text-base font-extrabold">AKSES TERKUNCI</h3>
+                <p className="mt-1 text-xs text-red-600 dark:text-zinc-400">
+                  Inventaris stok barang dan penjualan hanya dapat diakses oleh akun Owner.
+                </p>
+              </div>
+            )
           )}
 
           {activeTab === 'shifts' && (
