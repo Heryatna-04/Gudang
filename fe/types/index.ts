@@ -2,7 +2,7 @@
 
 export type UserRole = 'OWNER' | 'ADMIN';
 
-export type AttendanceStatus = 'PRESENT' | 'PERMISSION' | 'ABSENT';
+export type AttendanceStatus = 'PRESENT' | 'PERMISSION' | 'ABSENT' | 'OFF';
 
 export type WorkShift = 'PAGI' | 'MALAM';
 

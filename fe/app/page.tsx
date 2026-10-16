@@ -92,18 +92,20 @@ export default function Home() {
   const [activeWarehouseId, setActiveWarehouseId] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<string>('pos');
 
-  // Application state
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [transactions, setTransactions] = useState<ScaleTransaction[]>(MOCK_RECENT_TRANSACTIONS);
-  const [salesList, setSalesList] = useState<FactorySale[]>(MOCK_FACTORY_SALES);
-  const [activeShift, setActiveShift] = useState<CashShift | null>(MOCK_ACTIVE_SHIFT);
+  // Application state (Di-reset bersih untuk simulasi manual langsung dari 0)
+  const [products, setProducts] = useState<Product[]>(() =>
+    MOCK_PRODUCTS.map((p) => ({ ...p, currentStockKg: 0 }))
+  );
+  const [transactions, setTransactions] = useState<ScaleTransaction[]>([]);
+  const [salesList, setSalesList] = useState<FactorySale[]>([]);
+  const [activeShift, setActiveShift] = useState<CashShift | null>(null);
   const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
-  const [loans, setLoans] = useState<EmployeeLoan[]>(MOCK_EMPLOYEE_LOANS);
+  const [loans, setLoans] = useState<EmployeeLoan[]>([]);
   const [payrolls, setPayrolls] = useState<PayrollRecord[]>([]);
-  const [attendances, setAttendances] = useState<AttendanceRecord[]>(MOCK_ATTENDANCES);
-  const [opexList, setOpexList] = useState<OpexExpense[]>(MOCK_OPEX);
-  const [mutations, setMutations] = useState<StockMutation[]>(MOCK_MUTATIONS);
-  const [debts, setDebts] = useState<DebtRecord[]>(MOCK_DEBTS);
+  const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
+  const [opexList, setOpexList] = useState<OpexExpense[]>([]);
+  const [mutations, setMutations] = useState<StockMutation[]>([]);
+  const [debts, setDebts] = useState<DebtRecord[]>([]);
   const [syncTick, setSyncTick] = useState<number>(0);
   const triggerRefresh = () => setSyncTick((prev) => prev + 1);
 
@@ -167,6 +169,21 @@ export default function Home() {
             return [...localProds, ...prev.filter((p) => !ids.has(p.id))];
           });
         }
+
+        const localShifts = await localDB.cashShifts.toArray();
+        if (localShifts.length > 0) {
+          const unclosed = localShifts.find((s) => s.closedAt === null);
+          if (unclosed) setActiveShift(unclosed);
+        }
+
+        const localLoans = await localDB.employeeLoans.toArray();
+        if (localLoans.length > 0) setLoans(localLoans);
+
+        const localOpex = await localDB.opexExpenses.toArray();
+        if (localOpex.length > 0) setOpexList(localOpex);
+
+        const localDebts = await localDB.debts.toArray();
+        if (localDebts.length > 0) setDebts(localDebts);
       } catch (e) {
         console.warn('Gagal membaca IndexedDB lokal:', e);
       }
@@ -230,12 +247,15 @@ export default function Home() {
             shift: (a.shift as WorkShift) || 'PAGI',
             checkIn: a.check_in,
             checkOut: a.check_out,
-            status: a.status as AttendanceStatus,
-            recordedBy: 'Admin Gudang',
+            status: a.recorded_by === 'STATUS_OFF' || a.status === 'OFF' ? 'OFF' : (a.status as AttendanceStatus),
+            recordedBy: a.recorded_by === 'STATUS_OFF' ? 'Admin Gudang' : (a.recorded_by || 'Admin Gudang'),
             createdAt: a.created_at,
           }));
           setAttendances(mappedAtts);
           await localDB.attendances.bulkPut(mappedAtts);
+        } else if (dbAtts && dbAtts.length === 0) {
+          setAttendances([]);
+          await localDB.attendances.clear();
         }
 
         // Ambil Transaksi Timbangan & Detail Item dari Supabase
@@ -273,6 +293,9 @@ export default function Home() {
           }));
           setTransactions(mappedTxs);
           await localDB.scaleTransactions.bulkPut(mappedTxs);
+        } else if (dbTxs && dbTxs.length === 0) {
+          setTransactions([]);
+          await localDB.scaleTransactions.clear();
         }
 
         // Ambil Shift Kasir dari Supabase
@@ -297,7 +320,12 @@ export default function Home() {
               cashDifference: unclosed.cash_difference !== null ? Number(unclosed.cash_difference) : null,
               notes: unclosed.notes || '',
             });
+          } else {
+            setActiveShift(null);
           }
+        } else if (dbShifts && dbShifts.length === 0) {
+          setActiveShift(null);
+          await localDB.cashShifts.clear();
         }
 
         // Ambil Penjualan Pabrik dari Supabase
@@ -306,7 +334,7 @@ export default function Home() {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (dbSales && !salErr) {
+        if (dbSales && dbSales.length > 0 && !salErr) {
           const mappedSales: FactorySale[] = dbSales.map((s: any) => ({
             id: s.id,
             invoiceNumber: s.invoice_number,
@@ -323,9 +351,10 @@ export default function Home() {
             createdAt: s.created_at,
           }));
           setSalesList(mappedSales);
-          if (mappedSales.length > 0) {
-            await localDB.factorySales.bulkPut(mappedSales);
-          }
+          await localDB.factorySales.bulkPut(mappedSales);
+        } else if (dbSales && dbSales.length === 0) {
+          setSalesList([]);
+          await localDB.factorySales.clear();
         }
 
         // Ambil Biaya Operasional (OPEX) dari Supabase
@@ -346,6 +375,10 @@ export default function Home() {
             createdAt: o.created_at,
           }));
           setOpexList(mappedOpex);
+          await localDB.opexExpenses.bulkPut(mappedOpex);
+        } else if (dbOpex && dbOpex.length === 0) {
+          setOpexList([]);
+          await localDB.opexExpenses.clear();
         }
 
         // Ambil Kasbon Karyawan dari Supabase
@@ -368,6 +401,10 @@ export default function Home() {
             createdAt: l.created_at,
           }));
           setLoans(mappedLoans);
+          await localDB.employeeLoans.bulkPut(mappedLoans);
+        } else if (dbLoans && dbLoans.length === 0) {
+          setLoans([]);
+          await localDB.employeeLoans.clear();
         }
 
         // Ambil Riwayat Penggajian dari Supabase
@@ -392,6 +429,8 @@ export default function Home() {
             createdAt: p.created_at,
           }));
           setPayrolls(mappedPayrolls);
+        } else if (dbPayrolls && dbPayrolls.length === 0) {
+          setPayrolls([]);
         }
 
         // Ambil Hutang & Piutang dari Supabase
@@ -416,6 +455,10 @@ export default function Home() {
             createdAt: d.created_at,
           }));
           setDebts(mappedDebts);
+          await localDB.debts.bulkPut(mappedDebts);
+        } else if (dbDebts && dbDebts.length === 0) {
+          setDebts([]);
+          await localDB.debts.clear();
         }
       } catch (err) {
         console.warn('Gagal sinkronisasi data dari Supabase:', err);
