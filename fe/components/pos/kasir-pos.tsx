@@ -236,7 +236,7 @@ export function KasirPos({
       );
     } else {
       success(
-        `Nota ${newTx.invoiceNumber} (Rp ${totalBillToPay.toLocaleString('id-ID')}) tersimpan & struk dicetak.`,
+        `Nota ${newTx.invoiceNumber} (Rp ${totalBillToPay.toLocaleString('id-ID')}) tersimpan & struk dicetak. Stok ${newTx.items.length} komoditas otomatis masuk ke inventaris siap jual.`,
         'Transaksi Berhasil Disimpan'
       );
     }
@@ -503,32 +503,45 @@ export function KasirPos({
 
             {/* Komoditas dengan Pilihan Grid Cepat (Dikelola Khusus Oleh Owner) */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-700">Komoditas Logam / Rongsok</label>
-                <span className="text-[11px] font-semibold text-slate-500 italic">
-                  Harga & master komoditas diatur oleh Owner
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Komoditas Logam / Rongsok</label>
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  <span>Stok Gudang:</span>
+                  <span className="font-numeric font-black">{activeProduct?.currentStockKg?.toLocaleString('id-ID') || 0} Kg</span>
+                  {netWeight > 0 && (
+                    <span className="text-amber-700 dark:text-amber-400 font-bold ml-1">
+                      (+{netWeight} Kg → {(Number(activeProduct?.currentStockKg || 0) + netWeight).toFixed(1)} Kg Siap Jual)
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-h-48 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-h-52 overflow-y-auto pr-1">
                 {products.map((p) => {
                   const price = isPartner ? p.pricePartner : p.priceRegular;
+                  const isSelected = p.id === selectedProductId;
                   return (
                     <button
                       key={p.id}
                       type="button"
                       onClick={() => setSelectedProductId(p.id)}
-                      className={`rounded-xl p-2.5 text-left border transition-all ${
-                        p.id === selectedProductId
-                          ? 'bg-emerald-50 border-emerald-700 shadow-xs ring-1 ring-emerald-600'
-                          : 'bg-white border-slate-200 hover:bg-slate-50'
+                      className={`rounded-xl p-2.5 text-left border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-700 shadow-xs ring-1 ring-emerald-600'
+                          : 'bg-white dark:bg-black border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900/50'
                       }`}
                     >
-                      <div className="text-xs font-extrabold text-slate-900 truncate">{p.name}</div>
+                      <div className="text-xs font-extrabold text-slate-900 dark:text-zinc-100 truncate">{p.name}</div>
                       <div className="mt-1 flex items-baseline justify-between text-[11px]">
-                        <span className="text-slate-500 font-medium">{p.category.replace('_', ' ')}</span>
-                        <span className="font-numeric font-black text-emerald-800">
+                        <span className="text-slate-500 dark:text-zinc-400 font-medium">{p.category.replace('_', ' ')}</span>
+                        <span className="font-numeric font-black text-emerald-800 dark:text-emerald-400">
                           Rp{price.toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800 pt-1 text-[10px]">
+                        <span className="text-slate-400 dark:text-zinc-500">Stok Siap Jual:</span>
+                        <span className="font-numeric font-bold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                          {p.currentStockKg.toLocaleString('id-ID')} kg
                         </span>
                       </div>
                     </button>
@@ -618,8 +631,13 @@ export function KasirPos({
                   className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-3 text-xs transition-colors"
                 >
                   <div className="flex-1 pr-2">
-                    <div className="font-bold text-slate-900 dark:text-zinc-100">{item.productName}</div>
-                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-numeric">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900 dark:text-zinc-100">{item.productName}</span>
+                      <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.2 text-[9px] font-bold border border-emerald-200 dark:border-emerald-800">
+                        +{item.netWeightKg} Kg Siap Jual
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-numeric mt-0.5">
                       {item.netWeightKg} Kg × Rp{item.pricePerKg.toLocaleString('id-ID')}
                       {item.refactionKg > 0 && ` (Potong ${item.refactionKg}kg)`}
                       {item.refactionPct > 0 && ` (Potong ${item.refactionPct}%)`}

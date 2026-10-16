@@ -1081,35 +1081,40 @@ export function OwnerDashboard({
                       {p.category.replace(/_/g, ' ')}
                     </div>
                   </div>
-                  {!isEditing ? (
-                    <button
-                      type="button"
-                      onClick={() => handleStartEdit(p)}
-                      className="flex items-center gap-1 rounded bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
-                    >
-                      <Edit3 className="h-3 w-3" />
-                      Edit Harga
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-black border border-emerald-200 dark:border-emerald-800 font-numeric">
+                      Stok: {p.currentStockKg.toLocaleString('id-ID')} Kg
+                    </span>
+                    {!isEditing ? (
                       <button
                         type="button"
-                        onClick={() => handleSaveEdit(p.id)}
-                        className="rounded bg-emerald-800 dark:bg-emerald-700 text-white p-1 hover:bg-emerald-900 dark:hover:bg-emerald-600 cursor-pointer"
-                        title="Simpan"
+                        onClick={() => handleStartEdit(p)}
+                        className="flex items-center gap-1 rounded bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
                       >
-                        <Check className="h-3.5 w-3.5" />
+                        <Edit3 className="h-3 w-3" />
+                        Edit
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingProdId(null)}
-                        className="rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 p-1 hover:bg-slate-300 dark:hover:bg-zinc-700 cursor-pointer"
-                        title="Batal"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleSaveEdit(p.id)}
+                          className="rounded bg-emerald-800 dark:bg-emerald-700 text-white p-1 hover:bg-emerald-900 dark:hover:bg-emerald-600 cursor-pointer"
+                          title="Simpan"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingProdId(null)}
+                          className="rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 p-1 hover:bg-slate-300 dark:hover:bg-zinc-700 cursor-pointer"
+                          title="Batal"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {isEditing ? (
@@ -1156,8 +1161,11 @@ export function OwnerDashboard({
                       <span className="font-bold">Benchmark Pasar:</span>
                       <span className="font-black">Rp{p.marketPriceBenchmark.toLocaleString('id-ID')}/kg</span>
                     </div>
-                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-numeric font-medium">
-                      Estimasi Spread: +Rp{marginSpread.toLocaleString('id-ID')}/kg
+                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-numeric font-medium flex justify-between border-t border-slate-200/60 dark:border-zinc-800/60 pt-1">
+                      <span>Spread: +Rp{marginSpread.toLocaleString('id-ID')}/kg</span>
+                      <span className="font-bold text-slate-700 dark:text-zinc-300">
+                        Aset: Rp{(p.currentStockKg * p.marketPriceBenchmark).toLocaleString('id-ID')}
+                      </span>
                     </div>
                   </>
                 )}

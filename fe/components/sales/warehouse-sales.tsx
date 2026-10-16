@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BadgeDollarSign, Plus, CheckCircle, Truck, UserCheck, Banknote, ArrowUpRight, Search, Landmark } from 'lucide-react';
+import { BadgeDollarSign, Plus, CheckCircle, Truck, UserCheck, Banknote, ArrowUpRight, Search, Landmark, Boxes, AlertTriangle } from 'lucide-react';
 import { FactorySale, Product, BuyerType } from '../../types';
 
 interface WarehouseSalesProps {
@@ -32,6 +32,10 @@ export function WarehouseSalesManagement({
   const activeProduct = products.find((p) => p.id === productId) || products[0];
   const totalRevenue = weightKg * contractPricePerKg;
 
+  // Akumulasi total stok siap jual & estimasi nilai aset
+  const totalStockKg = products.reduce((acc, p) => acc + (p.currentStockKg || 0), 0);
+  const totalStockValue = products.reduce((acc, p) => acc + (p.currentStockKg || 0) * (p.marketPriceBenchmark || p.priceRegular), 0);
+
   // Filter penjualan gudang ini
   const warehouseSales = salesList.filter((s) => s.warehouseId === currentWarehouseId);
   const totalCashInToday = warehouseSales
@@ -60,7 +64,7 @@ export function WarehouseSalesManagement({
 
     onAddSale(newSale);
     success(
-      `Kas Masuk Rp ${totalRevenue.toLocaleString('id-ID')} (${paymentMethod === 'CASH_LACI' ? 'Masuk Laci Kasir' : 'Transfer Bank'})`,
+      `Kas Masuk Rp ${totalRevenue.toLocaleString('id-ID')} (${paymentMethod === 'CASH_LACI' ? 'Masuk Laci Kasir' : 'Transfer Bank'}). Stok ${activeProduct.name} berkurang ${weightKg} Kg.`,
       'Penjualan Berhasil Dicatat'
     );
   };
@@ -68,36 +72,103 @@ export function WarehouseSalesManagement({
   return (
     <div className="space-y-6 font-sans">
       {/* Header Info Kas Masuk */}
-      <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm transition-colors md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <BadgeDollarSign className="h-5 w-5 text-emerald-800" />
-            <h2 className="text-base font-extrabold text-slate-900">PENJUALAN STOK GUDANG (KAS MASUK)</h2>
+            <BadgeDollarSign className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-zinc-100">PENJUALAN STOK GUDANG (KAS MASUK)</h2>
           </div>
-          <p className="mt-1 text-xs text-slate-500 font-medium">
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 font-medium">
             Pencatatan pengeluaran barang & penerimaan uang dari pabrik peleburan atau pembeli biasa/eceran di {warehouseName}.
           </p>
         </div>
 
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-right">
-          <div className="text-xs font-bold text-slate-600">Total Kas Masuk Laci Tunai Hari Ini:</div>
-          <div className="font-numeric text-xl font-black text-emerald-800">
+        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/60 p-3 text-right">
+          <div className="text-xs font-bold text-slate-600 dark:text-zinc-400">Total Kas Masuk Laci Tunai Hari Ini:</div>
+          <div className="font-numeric text-xl font-black text-emerald-800 dark:text-emerald-400">
             Rp{totalCashInToday.toLocaleString('id-ID')}
           </div>
+        </div>
+      </div>
+
+      {/* OVERVIEW INVENTARIS STOK SIAP JUAL (DARI PEMBELIAN TIMBANGAN) */}
+      <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-xs transition-colors space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800 pb-3">
+          <div className="flex items-center gap-2">
+            <Boxes className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-zinc-100 tracking-tight">
+                INVENTARIS STOK BARANG SIAP JUAL
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
+                Akumulasi timbangan masuk dari pengepul / mitra. Klik kartu barang di bawah untuk langsung input penjualan.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-numeric">
+            <div className="rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-3 py-1.5 text-right">
+              <div className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 font-sans">Total Tonase Gudang:</div>
+              <div className="text-sm sm:text-base font-black text-slate-900 dark:text-zinc-100">
+                {(totalStockKg / 1000).toFixed(2)} Ton <span className="text-xs text-slate-500 font-normal">({totalStockKg.toLocaleString('id-ID')} Kg)</span>
+              </div>
+            </div>
+            <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 text-right">
+              <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 font-sans">Estimasi Nilai Aset Stok:</div>
+              <div className="text-sm sm:text-base font-black text-emerald-800 dark:text-emerald-300">
+                Rp{totalStockValue.toLocaleString('id-ID')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid Kartu Stok per Komoditas */}
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 max-h-56 overflow-y-auto pr-1">
+          {products.map((p) => {
+            const isSelected = p.id === productId;
+            return (
+              <div
+                key={p.id}
+                onClick={() => {
+                  setProductId(p.id);
+                  setContractPricePerKg(p.marketPriceBenchmark || p.pricePartner + 500);
+                }}
+                className={`rounded-xl p-3 border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-700 ring-1 ring-emerald-600 shadow-xs'
+                    : 'bg-slate-50/70 dark:bg-zinc-900/50 border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900'
+                }`}
+              >
+                <div className="font-extrabold text-xs text-slate-900 dark:text-zinc-100 truncate">{p.name}</div>
+                <div className="mt-1 flex items-baseline justify-between text-[11px] font-numeric">
+                  <span className="text-slate-500 dark:text-zinc-400 text-[10px]">{p.category.replace('_', ' ')}</span>
+                  <span className="font-black text-slate-900 dark:text-zinc-100 text-sm">
+                    {p.currentStockKg.toLocaleString('id-ID')} <span className="text-[10px] font-normal text-slate-500">Kg</span>
+                  </span>
+                </div>
+                <div className="mt-1.5 flex items-center justify-between border-t border-slate-200/80 dark:border-zinc-800 pt-1 text-[10px]">
+                  <span className="text-slate-500 dark:text-zinc-400">Harga Acuan:</span>
+                  <span className="font-numeric font-bold text-emerald-800 dark:text-emerald-400">
+                    Rp{(p.marketPriceBenchmark || p.pricePartner).toLocaleString('id-ID')}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Form Penjualan Stok Baru */}
         <div className="lg:col-span-5">
-          <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-2">
+          <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 space-y-4 shadow-sm transition-colors">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-zinc-200 border-b border-slate-100 dark:border-zinc-800 pb-2">
               Input Penjualan & Kas Masuk
             </h3>
 
             {/* Tipe Pembeli */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Tipe Pembeli</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Tipe Pembeli</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -106,10 +177,10 @@ export function WarehouseSalesManagement({
                     setBuyerName('Bengkel Bubut / Pembeli Biasa');
                     setPaymentMethod('CASH_LACI');
                   }}
-                  className={`py-2 text-xs font-bold rounded-lg border transition-all ${
+                  className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                     buyerType === 'PEMBELI_BIASA'
                       ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-emerald-50'
+                      : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:bg-emerald-50 dark:hover:bg-zinc-800'
                   }`}
                 >
                   Pembeli Biasa / Eceran
@@ -121,10 +192,10 @@ export function WarehouseSalesManagement({
                     setBuyerName('Pabrik Peleburan');
                     setPaymentMethod('TRANSFER_BANK');
                   }}
-                  className={`py-2 text-xs font-bold rounded-lg border transition-all ${
+                  className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                     buyerType === 'PELEBURAN_BESAR'
-                      ? 'bg-slate-900 text-amber-300 border-slate-950 shadow-xs'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-slate-900 dark:bg-zinc-800 text-amber-300 border-slate-950 dark:border-zinc-700 shadow-xs'
+                      : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800'
                   }`}
                 >
                   Peleburan Tonase Besar
@@ -133,30 +204,52 @@ export function WarehouseSalesManagement({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Nama Pembeli / Pabrik</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Nama Pembeli / Pabrik</label>
               <input
                 type="text"
                 value={buyerName}
                 onChange={(e) => setBuyerName(e.target.value)}
                 placeholder="Contoh: Bengkel Las / Pabrik Peleburan 1"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Komoditas Logam yang Dijual</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Komoditas Logam yang Dijual</label>
               <select
                 value={productId}
-                onChange={(e) => setProductId(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700 cursor-pointer"
+                onChange={(e) => {
+                  const newPid = e.target.value;
+                  setProductId(newPid);
+                  const p = products.find((prod) => prod.id === newPid);
+                  if (p) {
+                    setContractPricePerKg(p.marketPriceBenchmark || p.pricePartner + 500);
+                  }
+                }}
+                className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700 cursor-pointer"
               >
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} (Stok: {p.currentStockKg} kg)
+                    {p.name} (Tersedia: {p.currentStockKg.toLocaleString('id-ID')} kg)
                   </option>
                 ))}
               </select>
+
+              {/* Live Stock info badge */}
+              <div className="mt-1.5 flex flex-wrap items-center justify-between text-[11px] rounded-lg bg-slate-100 dark:bg-zinc-900 px-2.5 py-1 text-slate-700 dark:text-zinc-300 font-numeric border border-slate-200 dark:border-zinc-800">
+                <span>Stok Gudang: <b>{activeProduct.currentStockKg.toLocaleString('id-ID')} Kg</b></span>
+                {weightKg > activeProduct.currentStockKg ? (
+                  <span className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Melebihi stok gudang!
+                  </span>
+                ) : (
+                  <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                    Sisa setelah terjual: <b>{(activeProduct.currentStockKg - weightKg).toFixed(1)} Kg</b>
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">

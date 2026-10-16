@@ -69,20 +69,39 @@ export class OfflineSyncService {
 
           await supabase.from('scale_transaction_items').upsert(itemsPayload);
 
-          // C. Tambah stok rongsok masuk pada komoditas terkait
+          // C. Tambah stok rongsok masuk pada komoditas terkait (Akumulasi barang siap jual)
+          const stockIncrements = new Map<string, number>();
           for (const item of tx.items) {
+            const current = stockIncrements.get(item.productId) || 0;
+            stockIncrements.set(item.productId, current + Number(item.netWeightKg || 0));
+          }
+
+          for (const [prodId, weightToAdd] of stockIncrements.entries()) {
+            // Update IndexedDB lokal
+            try {
+              const lp = await localDB.products.get(prodId);
+              if (lp) {
+                await localDB.products.update(prodId, {
+                  currentStockKg: Number(((lp.currentStockKg || 0) + weightToAdd).toFixed(2)),
+                });
+              }
+            } catch (err) {
+              console.warn('[Sync] Gagal update stok produk lokal:', err);
+            }
+
+            // Update Supabase Cloud
             const { data: p } = await supabase
               .from('products')
               .select('current_stock_kg')
-              .eq('id', item.productId)
+              .eq('id', prodId)
               .maybeSingle();
 
             if (p) {
-              const newStock = Number(p.current_stock_kg || 0) + Number(item.netWeightKg);
+              const newStock = Number(((p.current_stock_kg || 0) + weightToAdd).toFixed(2));
               await supabase
                 .from('products')
                 .update({ current_stock_kg: newStock })
-                .eq('id', item.productId);
+                .eq('id', prodId);
             }
           }
         }
@@ -329,6 +348,18 @@ export class OfflineSyncService {
         });
 
         if (!error) {
+          // Kurangi stok produk lokal di IndexedDB
+          try {
+            const lp = await localDB.products.get(sale.productId);
+            if (lp) {
+              await localDB.products.update(sale.productId, {
+                currentStockKg: Math.max(0, Number(((lp.currentStockKg || 0) - Number(sale.weightKg || 0)).toFixed(2))),
+              });
+            }
+          } catch (err) {
+            console.warn('[Sync] Gagal update stok produk lokal saat penjualan:', err);
+          }
+
           // Kurangi stok komoditas di Supabase
           const { data: p } = await supabase
             .from('products')
@@ -337,7 +368,7 @@ export class OfflineSyncService {
             .maybeSingle();
 
           if (p) {
-            const newStock = Math.max(0, Number(p.current_stock_kg || 0) - Number(sale.weightKg));
+            const newStock = Math.max(0, Number(((p.current_stock_kg || 0) - Number(sale.weightKg || 0)).toFixed(2)));
             await supabase
               .from('products')
               .update({ current_stock_kg: newStock })

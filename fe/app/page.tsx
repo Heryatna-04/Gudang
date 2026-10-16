@@ -529,15 +529,17 @@ export default function Home() {
     // 1. Simpan ke local state UI
     setTransactions((prev) => [newTx, ...prev]);
 
-    // Tambah stok komoditas di local state UI
+    // Tambah stok komoditas di local state UI (Akumulasi barang siap jual)
     if (newTx.items && newTx.items.length > 0) {
       setProducts((prev) =>
         prev.map((p) => {
-          const item = newTx.items.find((i) => i.productId === p.id);
-          if (item) {
+          const addedKg = newTx.items
+            .filter((i) => i.productId === p.id)
+            .reduce((sum, i) => sum + Number(i.netWeightKg || 0), 0);
+          if (addedKg > 0) {
             return {
               ...p,
-              currentStockKg: (p.currentStockKg || 0) + item.netWeightKg,
+              currentStockKg: Number(((p.currentStockKg || 0) + addedKg).toFixed(2)),
             };
           }
           return p;
@@ -556,7 +558,7 @@ export default function Home() {
     setProducts((prev) =>
       prev.map((p) =>
         p.id === newSale.productId
-          ? { ...p, currentStockKg: Math.max(0, (p.currentStockKg || 0) - newSale.weightKg) }
+          ? { ...p, currentStockKg: Math.max(0, Number(((p.currentStockKg || 0) - Number(newSale.weightKg || 0)).toFixed(2))) }
           : p
       )
     );
