@@ -50,7 +50,7 @@ export function Sidebar({
       id: 'sales',
       label: 'Inventaris & Penjualan Stok',
       icon: BadgeDollarSign,
-      roleRequired: 'OWNER',
+      roleRequired: 'ALL',
       description: 'Inventaris siap jual & kas pabrik',
     },
     {

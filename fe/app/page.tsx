@@ -964,7 +964,7 @@ export default function Home() {
       case 'pos':
         return 'Kasir Timbangan Digital & Struk';
       case 'sales':
-        return 'Inventaris & Penjualan Stok Gudang (Khusus Owner)';
+        return 'Inventaris & Penjualan Stok Gudang';
       case 'shifts':
         return 'Manajemen Shift & Rekonsiliasi Kasir';
       case 'opex':
@@ -1111,22 +1111,13 @@ export default function Home() {
           )}
 
           {activeTab === 'sales' && (
-            activeRole === 'OWNER' ? (
-              <WarehouseSalesManagement
-                currentWarehouseId={activeWarehouseId}
-                warehouseName={activeWarehouse.name}
-                products={products}
-                salesList={salesList}
-                onAddSale={handleAddSale}
-              />
-            ) : (
-              <div className="rounded-2xl border border-red-200 dark:border-zinc-800 bg-red-50 dark:bg-black p-12 text-center text-red-800 dark:text-red-400 font-sans">
-                <h3 className="text-base font-extrabold">AKSES TERKUNCI</h3>
-                <p className="mt-1 text-xs text-red-600 dark:text-zinc-400">
-                  Inventaris stok barang dan penjualan hanya dapat diakses oleh akun Owner.
-                </p>
-              </div>
-            )
+            <WarehouseSalesManagement
+              currentWarehouseId={activeWarehouseId}
+              warehouseName={activeWarehouse.name}
+              products={products}
+              salesList={salesList}
+              onAddSale={handleAddSale}
+            />
           )}
 
           {activeTab === 'shifts' && (
