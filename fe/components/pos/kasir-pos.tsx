@@ -13,8 +13,14 @@ import {
   Camera,
   History,
   Trash2,
+  FileText,
+  Search,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import { Product, ScaleTransaction, ScaleTransactionItem } from '../../types';
+import { Product, ScaleTransaction, ScaleTransactionItem, FactorySale, CashShift } from '../../types';
 import { useScaleSerial } from '../../lib/hardware/use-scale-serial';
 import { buildThermalReceiptESC, printThermalReceipt } from '../../lib/hardware/escpos-builder';
 import { useToast } from '../ui/toast-notification';
@@ -24,10 +30,28 @@ interface KasirPosProps {
   warehouseId: number;
   warehouseName: string;
   onSaveTransaction: (tx: ScaleTransaction) => void;
+  transactions?: ScaleTransaction[];
+  salesList?: FactorySale[];
+  activeShift?: CashShift | null;
 }
 
-export function KasirPos({ products, warehouseId, warehouseName, onSaveTransaction }: KasirPosProps) {
+export function KasirPos({
+  products,
+  warehouseId,
+  warehouseName,
+  onSaveTransaction,
+  transactions = [],
+  salesList = [],
+  activeShift,
+}: KasirPosProps) {
   const { success, warning } = useToast();
+  const [posTab, setPosTab] = useState<'pos' | 'history'>('pos');
+  const [historyTab, setHistoryTab] = useState<'all' | 'pembelian' | 'penjualan'>('all');
+  const [searchHistory, setSearchHistory] = useState<string>('');
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
+
+  const warehouseTransactions = (transactions || []).filter((t) => t.warehouseId === warehouseId);
+  const warehouseSales = (salesList || []).filter((s) => s.warehouseId === warehouseId);
   const {
     currentWeight,
     isConnected,
@@ -187,8 +211,8 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
         1000 + Math.random() * 9000
       )}`,
       warehouseId,
-      cashierId: 'Kasir Gudang',
-      shiftId: 'shift-active-01',
+      cashierId: activeShift?.cashierId || 'Kasir Gudang',
+      shiftId: activeShift?.id || 'shift-active-01',
       sellerName: finalSeller,
       isPartner,
       totalAmount: totalBillToPay,
@@ -212,13 +236,19 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
       );
     } else {
       success(
-        `Nota ${newTx.invoiceNumber} (Rp ${totalBillToPay.toLocaleString('id-ID')}) selesai & struk dicetak.`,
-        'Transaksi Berhasil'
+        `Nota ${newTx.invoiceNumber} (Rp ${totalBillToPay.toLocaleString('id-ID')}) tersimpan & struk dicetak.`,
+        'Transaksi Berhasil Disimpan'
       );
     }
 
     setCartItems([]);
     setCashGiven(0);
+  };
+
+  const handleReprintReceipt = (tx: ScaleTransaction) => {
+    const receiptText = buildThermalReceiptESC(tx, warehouseName);
+    printThermalReceipt(receiptText);
+    success(`Struk thermal nota ${tx.invoiceNumber} sedang dicetak...`, 'Cetak Ulang Struk');
   };
 
   return (
@@ -257,6 +287,46 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
         </div>
       )}
 
+      {/* Tab Switcher Kasir: Input Timbangan vs Riwayat Transaksi */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-2.5 shadow-xs transition-colors">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPosTab('pos')}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+              posTab === 'pos'
+                ? 'bg-emerald-800 text-white shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
+            }`}
+          >
+            <Scale className="h-4 w-4" />
+            <span>Kasir Timbangan & Input Nota</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPosTab('history')}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+              posTab === 'history'
+                ? 'bg-emerald-800 text-white shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
+            }`}
+          >
+            <History className="h-4 w-4" />
+            <span>Riwayat Transaksi Kasir</span>
+            <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+              {warehouseTransactions.length + warehouseSales.length}
+            </span>
+          </button>
+        </div>
+
+        <div className="text-right text-xs font-bold text-slate-500 dark:text-zinc-400 px-2 flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>{warehouseName}</span>
+        </div>
+      </div>
+
+      {posTab === 'pos' ? (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Kolom Kiri: Layar Timbangan Digital & Input */}
         <div className="space-y-5 lg:col-span-7">
@@ -651,9 +721,379 @@ export function KasirPos({ products, warehouseId, warehouseName, onSaveTransacti
               Selesaikan Transaksi & Cetak Struk Thermal
             </button>
           </div>
+
+          {/* Widget 3 Nota Timbangan Terakhir Kasir */}
+          {warehouseTransactions.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-zinc-800 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-zinc-300">
+                <div className="flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
+                  <span>Nota Terakhir Kasir Ini</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPosTab('history')}
+                  className="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 hover:underline cursor-pointer"
+                >
+                  Lihat Semua ({warehouseTransactions.length}) →
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                {warehouseTransactions.slice(0, 3).map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-2.5 text-xs transition-colors"
+                  >
+                    <div className="truncate pr-2">
+                      <div className="font-mono font-bold text-slate-900 dark:text-zinc-100 text-[11px] truncate">
+                        {tx.invoiceNumber}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-zinc-400 truncate">
+                        {tx.sellerName} • {new Date(tx.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="font-numeric font-black text-amber-700 dark:text-amber-400 text-xs">
+                        Rp{tx.totalAmount.toLocaleString('id-ID')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleReprintReceipt(tx)}
+                        title="Cetak Ulang Struk Thermal"
+                        className="rounded-lg bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 p-1.5 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                      >
+                        <Printer className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
-  </div>
-  );
+  ) : (
+    /* TAMPILAN LENGKAP RIWAYAT TRANSAKSI KASIR (PEMBELIAN & PENJUALAN) */
+    <div className="space-y-4">
+      {/* Header Ringkasan Kas Kasir Hari Ini */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-black p-4 space-y-1">
+          <div className="flex items-center justify-between text-xs font-bold text-amber-900 dark:text-amber-400">
+            <span className="flex items-center gap-1.5">
+              <ArrowDownLeft className="h-4 w-4 text-amber-700" />
+              Total Pembelian Timbangan
+            </span>
+            <span className="font-numeric font-black">{warehouseTransactions.length} Nota</span>
+          </div>
+          <div className="font-numeric text-xl font-black text-amber-900 dark:text-amber-300">
+            Rp{warehouseTransactions.reduce((acc, t) => acc + t.totalAmount, 0).toLocaleString('id-ID')}
+          </div>
+          <p className="text-[10px] text-amber-800/80 dark:text-zinc-500 font-medium">
+            Kas keluar belanja rongsok dari pengepul & mitra
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-black p-4 space-y-1">
+          <div className="flex items-center justify-between text-xs font-bold text-emerald-900 dark:text-emerald-400">
+            <span className="flex items-center gap-1.5">
+              <ArrowUpRight className="h-4 w-4 text-emerald-700" />
+              Total Penjualan Stok
+            </span>
+            <span className="font-numeric font-black">{warehouseSales.length} Nota</span>
+          </div>
+          <div className="font-numeric text-xl font-black text-emerald-900 dark:text-emerald-300">
+            Rp{warehouseSales.reduce((acc, s) => acc + s.totalRevenue, 0).toLocaleString('id-ID')}
+          </div>
+          <p className="text-[10px] text-emerald-800/80 dark:text-zinc-500 font-medium">
+            Kas masuk penjualan ke pabrik & pembeli eceran
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-4 space-y-1 sm:col-span-2 lg:col-span-1">
+          <div className="text-xs font-bold text-slate-700 dark:text-zinc-300 flex items-center justify-between">
+            <span>Aktivitas Gudang</span>
+            <span className="rounded-full bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-400">
+              {warehouseName}
+            </span>
+          </div>
+          <div className="font-numeric text-xl font-black text-slate-900 dark:text-zinc-100">
+            {warehouseTransactions.length + warehouseSales.length} Transaksi
+          </div>
+          <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">
+            Tersimpan aman & tersinkronisasi Supabase Cloud
+          </p>
+        </div>
+      </div>
+
+      {/* Filter Tab & Pencarian */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-3.5 shadow-xs transition-colors">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setHistoryTab('all')}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              historyTab === 'all'
+                ? 'bg-emerald-800 text-white shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
+            }`}
+          >
+            Semua ({warehouseTransactions.length + warehouseSales.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryTab('pembelian')}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              historyTab === 'pembelian'
+                ? 'bg-emerald-800 text-white shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
+            }`}
+          >
+            Pembelian Timbangan ({warehouseTransactions.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryTab('penjualan')}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              historyTab === 'penjualan'
+                ? 'bg-emerald-800 text-white shadow-xs'
+                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
+            }`}
+          >
+            Penjualan Stok ({warehouseSales.length})
+          </button>
+        </div>
+
+        <div className="relative min-w-[220px]">
+          <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-2.5" />
+          <input
+            type="text"
+            value={searchHistory}
+            onChange={(e) => setSearchHistory(e.target.value)}
+            placeholder="Cari nota / nama..."
+            className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-black pl-8 pr-3 py-1.5 text-xs font-medium text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+          />
+        </div>
+      </div>
+
+      {/* List Riwayat Transaksi */}
+      <div className="space-y-3">
+        {/* Riwayat Pembelian Timbangan */}
+        {(historyTab === 'all' || historyTab === 'pembelian') && (
+          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-4 space-y-3 transition-colors">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2.5">
+              <div className="flex items-center gap-2">
+                <ArrowDownLeft className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
+                  Riwayat Pembelian Timbangan Masuk
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 font-numeric">
+                {warehouseTransactions.length} Nota
+              </span>
+            </div>
+
+            {warehouseTransactions.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
+                Belum ada riwayat pembelian timbangan di {warehouseName}.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {warehouseTransactions
+                  .filter((t) => {
+                    if (!searchHistory.trim()) return true;
+                    const q = searchHistory.toLowerCase();
+                    return (
+                      t.invoiceNumber.toLowerCase().includes(q) ||
+                      t.sellerName.toLowerCase().includes(q) ||
+                      t.items.some((i) => (i.productName || '').toLowerCase().includes(q))
+                    );
+                  })
+                  .map((tx) => {
+                    const isExpanded = expandedTxId === tx.id;
+                    return (
+                      <div
+                        key={tx.id}
+                        className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-black p-3.5 space-y-2 transition-colors"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-xs text-slate-900 dark:text-zinc-100">
+                              {tx.invoiceNumber}
+                            </span>
+                            <span
+                              className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
+                                tx.isPartner
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                                  : 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                              }`}
+                            >
+                              {tx.isPartner ? 'MITRA / VIP' : 'UMUM'}
+                            </span>
+                            {tx.requiresOwnerApproval && (
+                              <span
+                                className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
+                                  tx.isApprovedByOwner
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : 'bg-rose-100 text-rose-800 border-rose-300'
+                                }`}
+                              >
+                                {tx.isApprovedByOwner ? 'JUMBO APPROVED' : 'JUMBO PENDING'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">
+                              {new Date(tx.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}{' '}
+                              {new Date(tx.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleReprintReceipt(tx)}
+                              className="flex items-center gap-1 rounded-lg bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer shadow-xs"
+                              title="Cetak Ulang Struk Thermal"
+                            >
+                              <Printer className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
+                              <span>Cetak Ulang</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
+                              className="rounded-lg bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 p-1 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                              title={isExpanded ? 'Tutup Rincian' : 'Lihat Rincian Barang'}
+                            >
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-baseline justify-between text-xs">
+                          <div className="font-semibold text-slate-700 dark:text-zinc-300">
+                            Penjual: <span className="font-bold text-slate-900 dark:text-zinc-100">{tx.sellerName}</span>
+                            <span className="mx-2 text-slate-400">•</span>
+                            <span>{tx.items.length} Komoditas</span>
+                          </div>
+                          <div className="font-numeric text-base font-black text-amber-800 dark:text-amber-400">
+                            Rp{tx.totalAmount.toLocaleString('id-ID')}
+                          </div>
+                        </div>
+
+                        {/* Rincian Komoditas (Expandable) */}
+                        {isExpanded && (
+                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-zinc-800 space-y-1.5 text-xs">
+                            <div className="text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-tight">
+                              Rincian Barang yang Ditimbang:
+                            </div>
+                            <div className="divide-y divide-slate-200/60 dark:divide-zinc-800/80">
+                              {tx.items.map((item, idx) => (
+                                <div key={item.id || idx} className="py-1.5 flex items-center justify-between text-[11px]">
+                                  <div>
+                                    <span className="font-bold text-slate-800 dark:text-zinc-200">{item.productName || 'Komoditas'}</span>
+                                    <span className="text-slate-500 dark:text-zinc-400 ml-2 font-numeric">
+                                      Netto {item.netWeightKg} Kg × Rp{item.pricePerKg.toLocaleString('id-ID')}
+                                      {item.refactionKg > 0 && ` (Potong ${item.refactionKg}kg)`}
+                                      {item.refactionPct > 0 && ` (Potong ${item.refactionPct}%)`}
+                                    </span>
+                                  </div>
+                                  <div className="font-numeric font-bold text-emerald-800 dark:text-emerald-400">
+                                    Rp{item.subtotal.toLocaleString('id-ID')}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Riwayat Penjualan Stok Gudang */}
+        {(historyTab === 'all' || historyTab === 'penjualan') && (
+          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-4 space-y-3 transition-colors">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2.5">
+              <div className="flex items-center gap-2">
+                <ArrowUpRight className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
+                  Riwayat Penjualan Stok Gudang (Kas Masuk)
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 font-numeric">
+                {warehouseSales.length} Nota
+              </span>
+            </div>
+
+            {warehouseSales.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
+                Belum ada transaksi penjualan stok di {warehouseName}.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {warehouseSales
+                  .filter((s) => {
+                    if (!searchHistory.trim()) return true;
+                    const q = searchHistory.toLowerCase();
+                    return (
+                      s.invoiceNumber.toLowerCase().includes(q) ||
+                      s.factoryName.toLowerCase().includes(q) ||
+                      (s.productName || '').toLowerCase().includes(q)
+                    );
+                  })
+                  .map((sale) => (
+                    <div
+                      key={sale.id}
+                      className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-black p-3.5 space-y-2 transition-colors"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-xs text-slate-900 dark:text-zinc-100">
+                            {sale.invoiceNumber}
+                          </span>
+                          <span
+                            className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
+                              sale.paymentMethod === 'CASH_LACI'
+                                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                                : 'bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-300 border-slate-300 dark:border-zinc-700'
+                            }`}
+                          >
+                            {sale.paymentMethod === 'CASH_LACI' ? 'KAS TUNAI LACI' : 'TRANSFER BANK'}
+                          </span>
+                          <span className="rounded px-2 py-0.5 text-[10px] font-medium bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800">
+                            {sale.buyerType === 'PELEBURAN_BESAR' ? 'Peleburan Tonase' : 'Pembeli Biasa'}
+                          </span>
+                        </div>
+
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">
+                          {new Date(sale.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}{' '}
+                          {new Date(sale.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between text-xs">
+                        <div className="text-slate-700 dark:text-zinc-300">
+                          Pembeli: <span className="font-bold text-slate-900 dark:text-zinc-100">{sale.factoryName}</span>
+                          <span className="mx-2 text-slate-400">•</span>
+                          <span>{sale.productName || 'Komoditas'}</span>
+                          <span className="mx-1 font-numeric font-bold">({sale.weightKg} Kg @ Rp{sale.contractPricePerKg.toLocaleString('id-ID')})</span>
+                        </div>
+                        <div className="font-numeric text-base font-black text-emerald-800 dark:text-emerald-400">
+                          Rp{sale.totalRevenue.toLocaleString('id-ID')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+</div>
+);
 }

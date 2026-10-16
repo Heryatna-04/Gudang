@@ -304,12 +304,19 @@ export class OfflineSyncService {
    * Simpan Penjualan Stok Gudang / Pabrik (FactorySale + Kurangi Stok)
    */
   static async saveFactorySale(sale: FactorySale): Promise<boolean> {
+    try {
+      await localDB.factorySales.put(sale);
+    } catch (e) {
+      console.warn('[Sync] Gagal simpan factory sale ke Dexie:', e);
+    }
+
     if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
       try {
         const { error } = await supabase.from('factory_sales').upsert({
           id: sale.id,
           invoice_number: sale.invoiceNumber,
           warehouse_id: sale.warehouseId,
+          buyer_type: sale.buyerType || 'PELEBURAN_BESAR',
           factory_name: sale.factoryName,
           product_id: sale.productId,
           product_name: sale.productName,

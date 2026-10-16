@@ -23,6 +23,7 @@ import {
   RotateCcw,
   Sparkles,
   ArrowDownRight,
+  ArrowUpRight,
   Filter,
 } from 'lucide-react';
 import {
@@ -157,6 +158,7 @@ export function OwnerDashboard({
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [auditTab, setAuditTab] = useState<'pembelian' | 'penjualan'>('pembelian');
 
   // Perhitungan Range Tanggal Aktif berdasarkan Mode Kalender
   const { activeStartDate, activeEndDate, activePeriodLabel, periodDescription } = useMemo(() => {
@@ -1165,71 +1167,165 @@ export function OwnerDashboard({
         </div>
       </div>
 
-      {/* TABEL AUDIT REAL-TIME PEMBELIAN TIMBANGAN GUDANG 1 */}
-      <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm transition-colors duration-200">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <h3 className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">
-            Audit Real-Time Pembelian Timbangan Gudang 1
-          </h3>
+      {/* TABEL AUDIT & RIWAYAT TRANSAKSI REAL-TIME (PEMBELIAN & PENJUALAN) */}
+      <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm transition-colors duration-200 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800 pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAuditTab('pembelian')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+                auditTab === 'pembelian'
+                  ? 'bg-emerald-900 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
+              }`}
+            >
+              <ArrowDownRight className="h-4 w-4 text-amber-400" />
+              <span>Riwayat Pembelian Timbangan ({filteredTransactions.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAuditTab('penjualan')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+                auditTab === 'penjualan'
+                  ? 'bg-emerald-900 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
+              }`}
+            >
+              <ArrowUpRight className="h-4 w-4 text-emerald-400" />
+              <span>Riwayat Penjualan Stok Gudang ({filteredFactorySales.length})</span>
+            </button>
+          </div>
+
           <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
-            Menampilkan <span className="font-numeric font-bold text-slate-800 dark:text-zinc-200">{filteredTransactions.length}</span> nota ({activePeriodLabel})
+            Periode: <span className="font-bold text-slate-800 dark:text-zinc-200">{activePeriodLabel}</span>
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-slate-200 dark:border-zinc-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-zinc-400 bg-slate-50/50 dark:bg-black">
-              <tr>
-                <th className="py-2.5 px-3">No. Nota</th>
-                <th className="py-2.5 px-3">Gudang</th>
-                <th className="py-2.5 px-3">Penjual</th>
-                <th className="py-2.5 px-3">Item</th>
-                <th className="py-2.5 px-3">Total Nilai</th>
-                <th className="py-2.5 px-3">Status Approval</th>
-                <th className="py-2.5 px-3">Waktu</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-slate-700 dark:text-zinc-300 font-numeric">
-              {filteredTransactions.length === 0 ? (
+        {/* Tabel Pembelian Timbangan */}
+        {auditTab === 'pembelian' && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-slate-200 dark:border-zinc-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-zinc-400 bg-slate-50/50 dark:bg-black">
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-sans">
-                    Tidak ada transaksi timbangan pada periode kalender yang dipilih.
-                  </td>
+                  <th className="py-2.5 px-3">No. Nota</th>
+                  <th className="py-2.5 px-3">Gudang</th>
+                  <th className="py-2.5 px-3">Penjual</th>
+                  <th className="py-2.5 px-3">Item</th>
+                  <th className="py-2.5 px-3">Total Nilai</th>
+                  <th className="py-2.5 px-3">Status Approval</th>
+                  <th className="py-2.5 px-3">Waktu</th>
                 </tr>
-              ) : (
-                filteredTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-zinc-100">{tx.invoiceNumber}</td>
-                    <td className="py-3 px-3 font-sans font-medium text-slate-600 dark:text-zinc-400">Gudang {tx.warehouseId}</td>
-                    <td className="py-3 px-3 font-sans font-semibold text-slate-900 dark:text-zinc-200">{tx.sellerName}</td>
-                    <td className="py-3 px-3 text-slate-500 dark:text-zinc-400 font-sans">{tx.items.length} Barang</td>
-                    <td className="py-3 px-3 font-black text-amber-700 dark:text-amber-400">
-                      Rp{tx.totalAmount.toLocaleString('id-ID')}
-                    </td>
-                    <td className="py-3 px-3 font-sans">
-                      {tx.requiresOwnerApproval ? (
-                        tx.isApprovedByOwner ? (
-                          <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-                            APPROVED
-                          </span>
-                        ) : (
-                          <span className="rounded bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
-                            PENDING
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">NORMAL</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-slate-400 dark:text-zinc-500 font-sans">
-                      {new Date(tx.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} {new Date(tx.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-slate-700 dark:text-zinc-300 font-numeric">
+                {filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-sans">
+                      Tidak ada transaksi timbangan pada periode kalender yang dipilih.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  filteredTransactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
+                      <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-zinc-100">{tx.invoiceNumber}</td>
+                      <td className="py-3 px-3 font-sans font-medium text-slate-600 dark:text-zinc-400">Gudang {tx.warehouseId}</td>
+                      <td className="py-3 px-3 font-sans font-semibold text-slate-900 dark:text-zinc-200">{tx.sellerName}</td>
+                      <td className="py-3 px-3 text-slate-500 dark:text-zinc-400 font-sans">{tx.items.length} Barang</td>
+                      <td className="py-3 px-3 font-black text-amber-700 dark:text-amber-400">
+                        Rp{tx.totalAmount.toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-3 px-3 font-sans">
+                        {tx.requiresOwnerApproval ? (
+                          tx.isApprovedByOwner ? (
+                            <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                              APPROVED
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => onApproveJumboTransaction(tx.id)}
+                              className="rounded bg-amber-500 hover:bg-amber-600 px-2 py-0.5 text-[10px] font-black text-white shadow-xs transition-colors cursor-pointer"
+                            >
+                              SETUJUI SEKARANG
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">NORMAL</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-slate-400 dark:text-zinc-500 font-sans">
+                        {new Date(tx.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} {new Date(tx.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Tabel Penjualan Stok Gudang ke Pabrik / Eceran */}
+        {auditTab === 'penjualan' && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-slate-200 dark:border-zinc-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-zinc-400 bg-slate-50/50 dark:bg-black">
+                <tr>
+                  <th className="py-2.5 px-3">No. Invoice</th>
+                  <th className="py-2.5 px-3">Gudang</th>
+                  <th className="py-2.5 px-3">Pembeli / Pabrik</th>
+                  <th className="py-2.5 px-3">Komoditas Logam</th>
+                  <th className="py-2.5 px-3">Tonase (Kg)</th>
+                  <th className="py-2.5 px-3">Harga / Kg</th>
+                  <th className="py-2.5 px-3">Total Kas Masuk</th>
+                  <th className="py-2.5 px-3">Metode Bayar</th>
+                  <th className="py-2.5 px-3">Waktu</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-slate-700 dark:text-zinc-300 font-numeric">
+                {filteredFactorySales.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-sans">
+                      Tidak ada transaksi penjualan stok pada periode kalender yang dipilih.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredFactorySales.map((sale) => (
+                    <tr key={sale.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
+                      <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-zinc-100">{sale.invoiceNumber}</td>
+                      <td className="py-3 px-3 font-sans font-medium text-slate-600 dark:text-zinc-400">Gudang {sale.warehouseId}</td>
+                      <td className="py-3 px-3 font-sans">
+                        <div className="font-bold text-slate-900 dark:text-zinc-100">{sale.factoryName}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-zinc-400">
+                          {sale.buyerType === 'PELEBURAN_BESAR' ? 'Peleburan Tonase' : 'Pembeli Biasa'}
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 font-sans font-medium text-slate-800 dark:text-zinc-200">{sale.productName || 'Komoditas'}</td>
+                      <td className="py-3 px-3 font-black text-slate-900 dark:text-zinc-100">{sale.weightKg} Kg</td>
+                      <td className="py-3 px-3 text-slate-600 dark:text-zinc-400">Rp{sale.contractPricePerKg.toLocaleString('id-ID')}</td>
+                      <td className="py-3 px-3 font-black text-emerald-800 dark:text-emerald-400 text-sm">
+                        Rp{sale.totalRevenue.toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-3 px-3 font-sans">
+                        <span
+                          className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
+                            sale.paymentMethod === 'CASH_LACI'
+                              ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                              : 'bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-300 border-slate-300 dark:border-zinc-700'
+                          }`}
+                        >
+                          {sale.paymentMethod === 'CASH_LACI' ? 'KAS TUNAI LACI' : 'TRANSFER BANK'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-slate-400 dark:text-zinc-500 font-sans">
+                        {new Date(sale.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} {new Date(sale.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

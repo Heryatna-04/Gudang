@@ -44,10 +44,14 @@ export function buildThermalReceiptESC(transaction: ScaleTransaction, warehouseN
   return receipt;
 }
 
-export function printThermalReceipt(receiptText: string): void {
-  // Fallback to browser print window / thermal dialog
-  const printWindow = window.open('', '_blank', 'width=350,height=600');
-  if (printWindow) {
+export function printThermalReceipt(receiptText: string): boolean {
+  try {
+    if (typeof window === 'undefined') return false;
+    const printWindow = window.open('', '_blank', 'width=350,height=600');
+    if (!printWindow) {
+      console.warn('Pop-up cetak struk diblokir oleh browser.');
+      return false;
+    }
     printWindow.document.write(`
       <html>
         <head>
@@ -73,8 +77,16 @@ export function printThermalReceipt(receiptText: string): void {
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
+      try {
+        printWindow.print();
+        printWindow.close();
+      } catch (e) {
+        console.warn('Gagal memicu perintah print:', e);
+      }
     }, 250);
+    return true;
+  } catch (err) {
+    console.warn('Gagal membuka jendela cetak struk:', err);
+    return false;
   }
 }

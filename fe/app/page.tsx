@@ -108,6 +108,8 @@ export default function Home() {
   const [opexList, setOpexList] = useState<OpexExpense[]>(MOCK_OPEX);
   const [mutations, setMutations] = useState<StockMutation[]>(MOCK_MUTATIONS);
   const [debts, setDebts] = useState<DebtRecord[]>(MOCK_DEBTS);
+  const [syncTick, setSyncTick] = useState<number>(0);
+  const triggerRefresh = () => setSyncTick((prev) => prev + 1);
 
   const activeWarehouse = MOCK_WAREHOUSES.find((w) => w.id === activeWarehouseId) || MOCK_WAREHOUSES[0];
 
@@ -133,6 +135,14 @@ export default function Home() {
             const ids = new Set(localTxs.map((t) => t.id));
             const merged = [...localTxs, ...prev.filter((t) => !ids.has(t.id))];
             return merged;
+          });
+        }
+
+        const localSales = await localDB.factorySales.toArray();
+        if (localSales.length > 0) {
+          setSalesList((prev) => {
+            const ids = new Set(localSales.map((s) => s.id));
+            return [...localSales, ...prev.filter((s) => !ids.has(s.id))];
           });
         }
 
@@ -290,7 +300,7 @@ export default function Home() {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (dbSales && dbSales.length > 0 && !salErr) {
+        if (dbSales && !salErr) {
           const mappedSales: FactorySale[] = dbSales.map((s: any) => ({
             id: s.id,
             invoiceNumber: s.invoice_number,
@@ -307,6 +317,9 @@ export default function Home() {
             createdAt: s.created_at,
           }));
           setSalesList(mappedSales);
+          if (mappedSales.length > 0) {
+            await localDB.factorySales.bulkPut(mappedSales);
+          }
         }
 
         // Ambil Biaya Operasional (OPEX) dari Supabase
@@ -413,50 +426,61 @@ export default function Home() {
         .channel('public:realtime_changes')
         .on(
           'postgres_changes',
+          { event: '*', schema: 'public', table: 'scale_transactions' },
+          () => {
+            loadSupabaseData();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'scale_transaction_items' },
+          () => {
+            loadSupabaseData();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'factory_sales' },
+          () => {
+            loadSupabaseData();
+          }
+        )
+        .on(
+          'postgres_changes',
           { event: '*', schema: 'public', table: 'products' },
-          async () => {
-            const { data } = await supabase.from('products').select('*').order('name');
-            if (data && data.length > 0) {
-              const mapped: Product[] = data.map((p) => ({
-                id: p.id,
-                name: p.name,
-                category: p.category,
-                priceRegular: Number(p.price_regular),
-                pricePartner: Number(p.price_partner),
-                marketPriceBenchmark: Number(p.market_price_benchmark || p.price_partner + 500),
-                currentStockKg: Number(p.current_stock_kg || 0),
-                isActive: Boolean(p.is_active),
-                createdAt: p.created_at,
-              }));
-              setProducts(mapped);
-            }
+          () => {
+            loadSupabaseData();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'cash_shifts' },
+          () => {
+            loadSupabaseData();
           }
         )
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'attendances' },
-          async () => {
-            const { data } = await supabase.from('attendances').select('*');
-            if (data && data.length > 0) {
-              const mapped: AttendanceRecord[] = data.map((a) => ({
-                id: a.id,
-                employeeId: a.employee_id,
-                employeeName: a.employee_name || 'Karyawan',
-                warehouseId: Number(a.warehouse_id),
-                attendanceDate: a.attendance_date,
-                shift: (a.shift as WorkShift) || 'PAGI',
-                checkIn: a.check_in,
-                checkOut: a.check_out,
-                status: a.status as AttendanceStatus,
-                recordedBy: 'Admin Gudang',
-                createdAt: a.created_at,
-              }));
-              setAttendances(mapped);
-            }
+          () => {
+            loadSupabaseData();
           }
         )
         .subscribe();
     }
+
+    // Auto-polling dinamis tiap 10 detik agar data selalu up-to-date antar perangkat / kasir & owner
+    const pollTimer = setInterval(() => {
+      if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
+        loadSupabaseData();
+      }
+    }, 10000);
+
+    const handleFocus = () => {
+      if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
+        loadSupabaseData();
+      }
+    };
 
     // Auto-sync antrean tertunda jika terhubung internet
     const handleOnline = () => {
@@ -467,13 +491,16 @@ export default function Home() {
     };
 
     window.addEventListener('online', handleOnline);
+    window.addEventListener('focus', handleFocus);
     return () => {
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(pollTimer);
       if (realtimeChannel) {
         supabase.removeChannel(realtimeChannel);
       }
     };
-  }, [info]);
+  }, [info, syncTick]);
 
   const handleLoginSuccess = (user: { fullName: string; role: UserRole; username: string }) => {
     setCurrentUser(user);
@@ -520,10 +547,11 @@ export default function Home() {
 
     // 2. Simpan aman ke IndexedDB + Sync Supabase
     await OfflineSyncService.saveScaleTransaction(newTx);
+    triggerRefresh();
   };
 
   const handleAddSale = async (newSale: FactorySale) => {
-    setSalesList((prev) => [newSale, ...prev]);
+    setSalesList((prev) => [newSale, ...prev.filter((s) => s.id !== newSale.id)]);
     // Kurangi stok komoditas di local state UI
     setProducts((prev) =>
       prev.map((p) =>
@@ -533,6 +561,7 @@ export default function Home() {
       )
     );
     await OfflineSyncService.saveFactorySale(newSale);
+    triggerRefresh();
   };
 
   const handleOpenShift = async (initialCash: number, notes: string) => {
@@ -983,6 +1012,9 @@ export default function Home() {
               warehouseId={activeWarehouseId}
               warehouseName={activeWarehouse.name}
               onSaveTransaction={handleSaveTransaction}
+              transactions={transactions}
+              salesList={salesList}
+              activeShift={activeShift}
             />
           )}
 

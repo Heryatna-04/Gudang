@@ -9,6 +9,7 @@ import {
   OpexExpense,
   StockMutation,
   DebtRecord,
+  FactorySale,
 } from '../../types';
 
 export class DavidERPDatabase extends Dexie {
@@ -21,6 +22,7 @@ export class DavidERPDatabase extends Dexie {
   opexExpenses!: Table<OpexExpense, string>;
   stockMutations!: Table<StockMutation, string>;
   debts!: Table<DebtRecord, string>;
+  factorySales!: Table<FactorySale, string>;
 
   constructor() {
     super('DavidERPLocalDB');
@@ -38,6 +40,10 @@ export class DavidERPDatabase extends Dexie {
 
     this.version(2).stores({
       attendances: 'id, employeeId, attendanceDate, warehouseId, shift',
+    });
+
+    this.version(3).stores({
+      factorySales: 'id, invoiceNumber, warehouseId, buyerType, productId, paymentMethod, createdAt',
     });
   }
 }
