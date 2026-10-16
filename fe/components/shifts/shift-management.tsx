@@ -83,23 +83,23 @@ export function ShiftManagement({
   return (
     <div className="space-y-6 font-sans">
       {/* Header Shift Status */}
-      <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm transition-colors md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-emerald-800" />
-            <h2 className="text-base font-extrabold text-slate-900">KONTROL SHIFT KASIR & REKONSILIASI LACI</h2>
+            <Clock className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-zinc-100">KONTROL SHIFT KASIR & REKONSILIASI LACI</h2>
           </div>
-          <p className="mt-1 text-xs text-slate-500 font-medium">
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 font-medium">
             Perhitungan modal awal, kas keluar belanja timbangan, dan kas masuk penjualan tunai di {warehouseName}.
           </p>
         </div>
 
         <div>
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold border ${
               activeShift
-                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                : 'bg-slate-100 text-slate-600 border border-slate-300'
+                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-300 dark:border-zinc-800'
             }`}
           >
             <span
@@ -117,14 +117,14 @@ export function ShiftManagement({
         <div className="space-y-6 lg:col-span-7">
           {!activeShift ? (
             /* Buka Shift */
-            <form onSubmit={handleOpen} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <ArrowDownRight className="h-5 w-5 text-emerald-800" />
-                <h3 className="text-sm font-extrabold text-slate-900">Buka Shift Kasir Pagi</h3>
+            <form onSubmit={handleOpen} className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 space-y-4 shadow-sm transition-colors">
+              <div className="flex items-center gap-2 border-b border-slate-100 dark:border-zinc-800 pb-3">
+                <ArrowDownRight className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">Buka Shift Kasir Pagi</h3>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
                   Modal Awal Kas Fisik di Laci (Rp)
                 </label>
                 <input
@@ -137,7 +137,7 @@ export function ShiftManagement({
                     const val = e.target.value;
                     setInitialCashInput(val === '' ? '' : parseFloat(val) || 0);
                   }}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-base font-numeric font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="w-full rounded-xl border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3.5 py-2.5 text-base font-numeric font-black text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                   required
                 />
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -146,41 +146,41 @@ export function ShiftManagement({
                       key={amt}
                       type="button"
                       onClick={() => setInitialCashInput(amt)}
-                      className="rounded bg-slate-100 border border-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 font-numeric cursor-pointer"
+                      className="rounded bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800 font-numeric cursor-pointer"
                     >
                       Rp{amt.toLocaleString('id-ID')}
                     </button>
                   ))}
                 </div>
-                <p className="mt-1 text-[11px] text-slate-500 font-medium">
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
                   Uang tunai fisik yang diserahkan dari brankas ke laci meja timbangan pagi ini.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Catatan Shift</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Catatan Shift</label>
                 <input
                   type="text"
                   value={openNotes}
                   onChange={(e) => setOpenNotes(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-emerald-800 py-3 text-xs font-extrabold text-white shadow-md shadow-emerald-950/20 hover:bg-emerald-900 transition-all cursor-pointer"
+                className="w-full rounded-xl bg-emerald-800 hover:bg-emerald-900 py-3 text-xs font-extrabold text-white shadow-md shadow-emerald-950/20 transition-all cursor-pointer"
               >
                 Konfirmasi Buka Shift Kasir
               </button>
             </form>
           ) : (
             /* Tutup Shift */
-            <form onSubmit={handleClose} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <form onSubmit={handleClose} className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 space-y-4 shadow-sm transition-colors">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
                 <div className="flex items-center gap-2">
-                  <ArrowUpRight className="h-5 w-5 text-amber-600" />
-                  <h3 className="text-sm font-extrabold text-slate-900">Tutup Shift Kasir Sore / Malam & Hitung Laci</h3>
+                  <ArrowUpRight className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">Tutup Shift Kasir Sore / Malam & Hitung Laci</h3>
                 </div>
                 {onUpdateInitialCash && (
                   <button
@@ -189,7 +189,7 @@ export function ShiftManagement({
                       setEditCashInput(activeShift.initialCash);
                       setIsEditingCash(!isEditingCash);
                     }}
-                    className="flex items-center gap-1 text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer"
+                    className="flex items-center gap-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-400 hover:underline cursor-pointer"
                   >
                     <Edit3 className="h-3.5 w-3.5" />
                     {isEditingCash ? 'Batal Edit Kas' : 'Ubah Kas Pagi (Dinamis)'}
@@ -199,8 +199,8 @@ export function ShiftManagement({
 
               {/* Form Ubah Kas Awal Pagi Dinamis */}
               {isEditingCash && (
-                <div className="rounded-xl border border-emerald-300 bg-emerald-50/70 p-3.5 space-y-2 animate-in fade-in">
-                  <label className="block text-xs font-bold text-slate-800">
+                <div className="rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 p-3.5 space-y-2 animate-in fade-in">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-zinc-200">
                     Sesuaikan Kas Awal / Tambah Suntikan Modal Hari Ini (Rp):
                   </label>
                   <div className="flex gap-2">
@@ -214,7 +214,7 @@ export function ShiftManagement({
                         const val = e.target.value;
                         setEditCashInput(val === '' ? '' : parseFloat(val) || 0);
                       }}
-                      className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-numeric font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                      className="flex-1 rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-1.5 text-xs font-numeric font-black text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                     />
                     <button
                       type="button"
@@ -228,35 +228,35 @@ export function ShiftManagement({
               )}
 
               {/* Rincian Arus Kas Laci */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600">
+              <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50 p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600 dark:text-zinc-400">
                   <span className="font-semibold">Modal Awal Kas Pagi:</span>
-                  <span className="font-numeric font-bold text-slate-900">
+                  <span className="font-numeric font-bold text-slate-900 dark:text-zinc-100">
                     Rp{activeShift.initialCash.toLocaleString('id-ID')}
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-600 dark:text-zinc-400">
                   <span className="font-semibold">Kas Masuk (Penjualan Tunai Laci):</span>
-                  <span className="font-numeric font-bold text-emerald-700">
+                  <span className="font-numeric font-bold text-emerald-700 dark:text-emerald-400">
                     + Rp{totalCashInSalesToday.toLocaleString('id-ID')}
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-600 dark:text-zinc-400">
                   <span className="font-semibold">Kas Keluar (Belanja Timbangan):</span>
-                  <span className="font-numeric font-bold text-red-600">
+                  <span className="font-numeric font-bold text-red-600 dark:text-rose-400">
                     - Rp{totalExpenseToday.toLocaleString('id-ID')}
                   </span>
                 </div>
-                <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-slate-900">
+                <div className="flex justify-between border-t border-slate-200 dark:border-zinc-800 pt-2 font-bold text-slate-900 dark:text-zinc-100">
                   <span>Estimasi Uang Fisik di Laci Seharusnya:</span>
-                  <span className="font-numeric text-base text-amber-700 font-black">
+                  <span className="font-numeric text-base text-amber-700 dark:text-amber-400 font-black">
                     Rp{expectedClosingCash.toLocaleString('id-ID')}
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
                   Uang Fisik Aktual Hasil Hitungan di Laci (Rp)
                 </label>
                 <input
@@ -269,7 +269,7 @@ export function ShiftManagement({
                     const val = e.target.value;
                     setActualCashInput(val === '' ? '' : parseFloat(val) || 0);
                   }}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-base font-numeric font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="w-full rounded-xl border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3.5 py-2.5 text-base font-numeric font-black text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                   required
                 />
               </div>
@@ -278,27 +278,27 @@ export function ShiftManagement({
                 <div
                   className={`rounded-xl p-3 text-xs font-bold border ${
                     cashDifference === 0
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-850'
                       : cashDifference < 0
-                      ? 'bg-red-50 text-red-800 border-red-300'
-                      : 'bg-blue-50 text-blue-800 border-blue-300'
+                      ? 'bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-300 dark:border-red-850'
+                      : 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-850'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 font-bold">
                       {cashDifference === 0 ? (
                         <>
-                          <CheckCircle className="h-4 w-4 text-emerald-600" />
+                          <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           <span>Kas Cocok Sempurna (Tidak Ada Selisih)</span>
                         </>
                       ) : cashDifference < 0 ? (
                         <>
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
                           <span>SELISIH MINUS (KAS TEKOR)</span>
                         </>
                       ) : (
                         <>
-                          <ArrowUpRight className="h-4 w-4 text-blue-600" />
+                          <ArrowUpRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           <span>SELISIH LEBIH (SURPLUS)</span>
                         </>
                       )}
@@ -311,18 +311,18 @@ export function ShiftManagement({
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Catatan Tutup Shift</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Catatan Tutup Shift</label>
                 <input
                   type="text"
                   value={closeNotes}
                   onChange={(e) => setCloseNotes(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-slate-900 py-3 text-xs font-extrabold text-amber-300 shadow-md shadow-slate-900/30 hover:bg-slate-800 transition-all cursor-pointer"
+                className="w-full rounded-xl bg-slate-900 dark:bg-emerald-600 py-3 text-xs font-extrabold text-amber-300 dark:text-white shadow-md shadow-slate-900/30 hover:bg-slate-800 dark:hover:bg-emerald-500 transition-all cursor-pointer"
               >
                 Kunci & Tutup Shift Kasir
               </button>
@@ -333,19 +333,19 @@ export function ShiftManagement({
         {/* Kolom Kanan: Laporan Keuntungan Sore/Malam & Rincian Shift */}
         <div className="space-y-4 lg:col-span-5">
           {/* Card Laporan Keuntungan Hari Ini (Pagi vs Sore/Malam) */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-900 pb-2">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-emerald-800" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                <TrendingUp className="h-4 w-4 text-emerald-800 dark:text-emerald-400" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
                   Laporan Keuntungan Hari Ini (Sore / Malam)
                 </h3>
               </div>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                   dailyProfit >= 0
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                    : 'bg-red-100 text-red-800 border border-red-300'
+                    ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                    : 'bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800'
                 }`}
               >
                 {dailyProfit >= 0 ? 'UNTUNG / SURPLUS' : 'DEFISIT BERJALAN'}
@@ -353,37 +353,37 @@ export function ShiftManagement({
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-slate-600 dark:text-zinc-400">
                 <span>Total Penjualan Stok (Omzet):</span>
-                <span className="font-numeric font-bold text-emerald-700">
+                <span className="font-numeric font-bold text-emerald-700 dark:text-emerald-400">
                   +Rp{totalCashInSalesToday.toLocaleString('id-ID')}
                 </span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-slate-600 dark:text-zinc-400">
                 <span>Total Belanja Timbangan (Modal Keluar):</span>
-                <span className="font-numeric font-bold text-red-600">
+                <span className="font-numeric font-bold text-red-600 dark:text-red-400">
                   -Rp{totalExpenseToday.toLocaleString('id-ID')}
                 </span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-slate-600 dark:text-zinc-400">
                 <span>Biaya Operasional (Kas Kecil / OPEX):</span>
-                <span className="font-numeric font-bold text-amber-700">
+                <span className="font-numeric font-bold text-amber-700 dark:text-amber-400">
                   -Rp{totalOpexToday.toLocaleString('id-ID')}
                 </span>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 pt-2 mt-2">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 p-3 pt-2 mt-2">
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                   Estimasi Laba Bersih Hari Ini:
                 </div>
                 <div
                   className={`font-numeric text-2xl font-black mt-0.5 ${
-                    dailyProfit >= 0 ? 'text-emerald-800' : 'text-red-600'
+                    dailyProfit >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
                   }`}
                 >
                   {dailyProfit >= 0 ? '+' : ''}Rp{dailyProfit.toLocaleString('id-ID')}
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1 font-medium">
                   *Perhitungan harian riil (Penjualan masuk dikurangi belanja timbangan & biaya operasional).
                 </p>
               </div>
@@ -391,37 +391,37 @@ export function ShiftManagement({
           </div>
 
           {/* Informasi Shift Kasir */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-3">
+          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400 mb-3">
               Status Kas Meja Kasir
             </h3>
             {activeShift ? (
               <div className="space-y-3 text-xs">
-                <div className="flex justify-between border-b border-slate-100 pb-2">
-                  <span className="text-slate-500 font-semibold">Kasir Bertugas:</span>
-                  <span className="text-slate-900 font-bold">{activeShift.cashierId}</span>
+                <div className="flex justify-between border-b border-slate-100 dark:border-zinc-900 pb-2">
+                  <span className="text-slate-500 dark:text-zinc-400 font-semibold">Kasir Bertugas:</span>
+                  <span className="text-slate-900 dark:text-zinc-100 font-bold">{activeShift.cashierId}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-100 pb-2">
-                  <span className="text-slate-500 font-semibold">Jam Buka:</span>
-                  <span className="text-slate-900 font-numeric font-bold">
+                <div className="flex justify-between border-b border-slate-100 dark:border-zinc-900 pb-2">
+                  <span className="text-slate-500 dark:text-zinc-400 font-semibold">Jam Buka:</span>
+                  <span className="text-slate-900 dark:text-zinc-100 font-numeric font-bold">
                     {new Date(activeShift.openedAt).toLocaleTimeString('id-ID')} WIB
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-100 pb-2">
-                  <span className="text-slate-500 font-semibold">Modal Kas Pagi:</span>
-                  <span className="font-numeric font-bold text-slate-900">
+                <div className="flex justify-between border-b border-slate-100 dark:border-zinc-900 pb-2">
+                  <span className="text-slate-500 dark:text-zinc-400 font-semibold">Modal Kas Pagi:</span>
+                  <span className="font-numeric font-bold text-slate-900 dark:text-zinc-100">
                     Rp{activeShift.initialCash.toLocaleString('id-ID')}
                   </span>
                 </div>
                 <div className="flex justify-between pt-1 font-bold">
-                  <span className="text-slate-700">Sisa Kas Fisik di Meja Kasir:</span>
-                  <span className="font-numeric font-black text-amber-700">
+                  <span className="text-slate-700 dark:text-zinc-300">Sisa Kas Fisik di Meja Kasir:</span>
+                  <span className="font-numeric font-black text-amber-700 dark:text-amber-400">
                     Rp{expectedClosingCash.toLocaleString('id-ID')}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="py-6 text-center text-xs text-slate-400 font-medium">
+              <div className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
                 Shift belum dibuka. Masukkan modal awal kasir untuk memulai penimbangan hari ini.
               </div>
             )}

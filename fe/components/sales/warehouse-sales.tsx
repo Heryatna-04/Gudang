@@ -210,7 +210,7 @@ export function WarehouseSalesManagement({
                 value={buyerName}
                 onChange={(e) => setBuyerName(e.target.value)}
                 placeholder="Contoh: Bengkel Las / Pabrik Peleburan 1"
-                className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                 required
               />
             </div>
@@ -227,10 +227,10 @@ export function WarehouseSalesManagement({
                     setContractPricePerKg(p.marketPriceBenchmark || p.pricePartner + 500);
                   }
                 }}
-                className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700 cursor-pointer"
+                className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700 cursor-pointer"
               >
                 {products.map((p) => (
-                  <option key={p.id} value={p.id}>
+                  <option key={p.id} value={p.id} className="dark:bg-black">
                     {p.name} (Tersedia: {p.currentStockKg.toLocaleString('id-ID')} kg)
                   </option>
                 ))}
@@ -254,27 +254,27 @@ export function WarehouseSalesManagement({
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Berat Jual (Kg)</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Berat Jual (Kg)</label>
                 <input
                   type="number"
                   min="1"
                   step="1"
                   value={weightKg}
                   onChange={(e) => setWeightKg(parseFloat(e.target.value) || 0)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 font-numeric focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 font-numeric focus:outline-none focus:ring-2 focus:ring-emerald-700"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Harga Jual / Kg (Rp)</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Harga Jual / Kg (Rp)</label>
                 <input
                   type="number"
                   min="100"
                   step="50"
                   value={contractPricePerKg}
                   onChange={(e) => setContractPricePerKg(parseFloat(e.target.value) || 0)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 font-numeric focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-400 font-numeric focus:outline-none focus:ring-2 focus:ring-emerald-700"
                   required
                 />
               </div>
@@ -282,15 +282,15 @@ export function WarehouseSalesManagement({
 
             {/* Metode Pembayaran: Masuk Kasir Laci vs Rekening */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Tujuan Kas Masuk</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Tujuan Kas Masuk</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('CASH_LACI')}
-                  className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg border transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                     paymentMethod === 'CASH_LACI'
                       ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs'
-                      : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                      : 'bg-white dark:bg-black text-slate-600 dark:text-zinc-400 border-slate-300 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900'
                   }`}
                 >
                   <Banknote className="h-4 w-4" />
@@ -299,10 +299,10 @@ export function WarehouseSalesManagement({
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('TRANSFER_BANK')}
-                  className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg border transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                     paymentMethod === 'TRANSFER_BANK'
-                      ? 'bg-slate-900 text-amber-300 border-slate-950 shadow-xs'
-                      : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                      ? 'bg-slate-900 dark:bg-zinc-800 text-amber-300 border-slate-950 dark:border-zinc-700 shadow-xs'
+                      : 'bg-white dark:bg-black text-slate-600 dark:text-zinc-400 border-slate-300 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900'
                   }`}
                 >
                   <Landmark className="h-4 w-4" />
@@ -312,16 +312,16 @@ export function WarehouseSalesManagement({
             </div>
 
             {/* Total Tagihan Penjualan */}
-            <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/60 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Total Nilai Penjualan:</span>
-              <span className="font-numeric text-base font-black text-emerald-800">
+            <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/40 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700 dark:text-zinc-300">Total Nilai Penjualan:</span>
+              <span className="font-numeric text-base font-black text-emerald-800 dark:text-emerald-400">
                 Rp{totalRevenue.toLocaleString('id-ID')}
               </span>
             </div>
 
             <button
               type="submit"
-              className="w-full rounded-xl bg-emerald-800 py-3 text-xs font-extrabold text-white shadow-md shadow-emerald-950/20 hover:bg-emerald-900 transition-all"
+              className="w-full rounded-xl bg-emerald-800 hover:bg-emerald-900 py-3 text-xs font-extrabold text-white shadow-md shadow-emerald-950/20 transition-all cursor-pointer"
             >
               Simpan Penjualan & Tambah Kas Masuk
             </button>
@@ -330,47 +330,47 @@ export function WarehouseSalesManagement({
 
         {/* Tabel Riwayat Penjualan */}
         <div className="lg:col-span-7">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-3">
+          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm transition-colors">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-zinc-300 mb-3">
               Riwayat Penjualan Stok ({warehouseName})
             </h3>
 
             <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
               {warehouseSales.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 font-medium">
+                <div className="py-8 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
                   Belum ada transaksi penjualan stok di gudang ini.
                 </div>
               ) : (
                 warehouseSales.map((sale) => (
                   <div
                     key={sale.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs space-y-2"
+                    className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-black p-3.5 text-xs space-y-2 transition-colors"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-slate-900">{sale.invoiceNumber}</span>
+                      <span className="font-mono font-bold text-slate-900 dark:text-zinc-100">{sale.invoiceNumber}</span>
                       <span
-                        className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                        className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
                           sale.paymentMethod === 'CASH_LACI'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                            : 'bg-slate-200 text-slate-800 border border-slate-300'
+                            ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                            : 'bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-300 border-slate-300 dark:border-zinc-700'
                         }`}
                       >
                         {sale.paymentMethod === 'CASH_LACI' ? 'KAS TUNAI LACI' : 'TRANSFER BANK'}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-slate-700">
-                      <span className="font-bold">{sale.factoryName}</span>
-                      <span className="text-[11px] text-slate-500 font-medium">
+                    <div className="flex items-center justify-between text-slate-700 dark:text-zinc-300">
+                      <span className="font-bold text-slate-900 dark:text-zinc-100">{sale.factoryName}</span>
+                      <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
                         {sale.buyerType === 'PELEBURAN_BESAR' ? 'Peleburan' : 'Pembeli Biasa'}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-[11px] text-slate-600">
+                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-zinc-800 pt-2 text-[11px] text-slate-600 dark:text-zinc-400">
                       <div>
                         {sale.productName} • <span className="font-numeric font-bold">{sale.weightKg} Kg</span> @ Rp{sale.contractPricePerKg.toLocaleString('id-ID')}
                       </div>
-                      <div className="font-numeric font-black text-emerald-800 text-sm">
+                      <div className="font-numeric font-black text-emerald-800 dark:text-emerald-400 text-sm">
                         Rp{sale.totalRevenue.toLocaleString('id-ID')}
                       </div>
                     </div>

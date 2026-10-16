@@ -414,7 +414,7 @@ export function KasirPos({
                   key={w}
                   type="button"
                   onClick={() => setSimulatedWeight(w)}
-                  className="rounded bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-amber-100"
+                  className="rounded bg-white dark:bg-black border border-amber-300 dark:border-zinc-800 px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-zinc-200 hover:bg-amber-100 dark:hover:bg-zinc-900"
                 >
                   +{w}kg
                 </button>
@@ -422,7 +422,7 @@ export function KasirPos({
               <button
                 type="button"
                 onClick={resetTare}
-                className="flex items-center gap-1 rounded bg-slate-900 px-3 py-1 text-xs text-amber-300 hover:bg-slate-800 font-bold ml-auto shadow-xs"
+                className="flex items-center gap-1 rounded bg-slate-900 dark:bg-zinc-900 border border-slate-800 dark:border-zinc-700 px-3 py-1 text-xs text-amber-300 hover:bg-slate-800 dark:hover:bg-zinc-800 font-bold ml-auto shadow-xs"
               >
                 <RotateCcw className="h-3 w-3" />
                 Nol-kan / Tare (0 Kg)
@@ -436,11 +436,11 @@ export function KasirPos({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-slate-700">Nama Pengepul / Penjual</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Nama Pengepul / Penjual</label>
                   <button
                     type="button"
                     onClick={() => setIsCustomSeller(!isCustomSeller)}
-                    className="text-[11px] font-bold text-emerald-800 hover:underline"
+                    className="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 hover:underline cursor-pointer"
                   >
                     {isCustomSeller ? 'Pilih dari List' : '+ Ketik Nama Baru'}
                   </button>
@@ -452,17 +452,17 @@ export function KasirPos({
                     value={customSellerName}
                     onChange={(e) => setCustomSellerName(e.target.value)}
                     placeholder="Ketik nama penjual bebas..."
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                    className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                     autoFocus
                   />
                 ) : (
                   <select
                     value={sellerName}
                     onChange={(e) => setSellerName(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                    className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700 cursor-pointer"
                   >
                     {defaultSellers.map((s) => (
-                      <option key={s} value={s}>
+                      <option key={s} value={s} className="bg-white dark:bg-black text-slate-900 dark:text-zinc-100">
                         {s}
                       </option>
                     ))}
@@ -471,15 +471,15 @@ export function KasirPos({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Kategori Harga Mitra</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Kategori Harga Mitra</label>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setIsPartner(true)}
-                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-bold border transition-all ${
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-bold border transition-all cursor-pointer ${
                       isPartner
                         ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs'
-                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+                        : 'bg-white dark:bg-black text-slate-600 dark:text-zinc-400 border-slate-300 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900'
                     }`}
                   >
                     <UserCheck className="h-3.5 w-3.5" />
@@ -488,10 +488,10 @@ export function KasirPos({
                   <button
                     type="button"
                     onClick={() => setIsPartner(false)}
-                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-bold border transition-all ${
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-bold border transition-all cursor-pointer ${
                       !isPartner
                         ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
-                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+                        : 'bg-white dark:bg-black text-slate-600 dark:text-zinc-400 border-slate-300 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900'
                     }`}
                   >
                     <UserX className="h-3.5 w-3.5" />
@@ -551,15 +551,15 @@ export function KasirPos({
             </div>
 
             {/* Potongan Kotoran (Refaksi) */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+            <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-3.5 transition-colors">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-700">Potongan Kotoran (Refaksi)</span>
-                <div className="flex gap-1 bg-white p-0.5 rounded-lg border border-slate-200">
+                <span className="text-xs font-bold text-slate-700 dark:text-zinc-300">Potongan Kotoran (Refaksi)</span>
+                <div className="flex gap-1 bg-white dark:bg-black p-0.5 rounded-lg border border-slate-200 dark:border-zinc-800">
                   <button
                     type="button"
                     onClick={() => setRefactionType('kg')}
-                    className={`rounded px-2.5 py-0.5 text-xs font-bold ${
-                      refactionType === 'kg' ? 'bg-emerald-800 text-white' : 'text-slate-600 hover:text-slate-900'
+                    className={`rounded px-2.5 py-0.5 text-xs font-bold transition-all cursor-pointer ${
+                      refactionType === 'kg' ? 'bg-emerald-800 text-white' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                     }`}
                   >
                     Potong Kg
@@ -567,8 +567,8 @@ export function KasirPos({
                   <button
                     type="button"
                     onClick={() => setRefactionType('pct')}
-                    className={`rounded px-2.5 py-0.5 text-xs font-bold ${
-                      refactionType === 'pct' ? 'bg-emerald-800 text-white' : 'text-slate-600 hover:text-slate-900'
+                    className={`rounded px-2.5 py-0.5 text-xs font-bold transition-all cursor-pointer ${
+                      refactionType === 'pct' ? 'bg-emerald-800 text-white' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                     }`}
                   >
                     Potong %
@@ -584,11 +584,11 @@ export function KasirPos({
                   value={refactionValue || ''}
                   onChange={(e) => setRefactionValue(parseFloat(e.target.value) || 0)}
                   placeholder={`Nilai potongan dalam ${refactionType.toUpperCase()}`}
-                  className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="flex-1 rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                 />
-                <div className="text-right text-xs text-slate-600">
+                <div className="text-right text-xs text-slate-600 dark:text-zinc-400">
                   <span>Netto: </span>
-                  <span className="font-numeric font-black text-slate-900 text-sm">{netWeight} Kg</span>
+                  <span className="font-numeric font-black text-slate-900 dark:text-zinc-100 text-sm">{netWeight} Kg</span>
                 </div>
               </div>
             </div>
@@ -677,7 +677,7 @@ export function KasirPos({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 mb-1">
                 Uang Tunai Diserahkan Kasir ke Penjual (Rp):
               </label>
               <input
@@ -687,7 +687,7 @@ export function KasirPos({
                 value={cashGiven || ''}
                 onChange={(e) => setCashGiven(parseFloat(e.target.value) || 0)}
                 placeholder={`Contoh: Rp${totalBillToPay}`}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-numeric font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-sm font-numeric font-black text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
               />
 
               {/* Quick Cash Buttons */}
@@ -702,7 +702,7 @@ export function KasirPos({
                     <button
                       key={val}
                       onClick={() => setCashGiven(val)}
-                      className="rounded bg-white border border-slate-300 px-2 py-0.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100 font-numeric"
+                      className="rounded bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 font-numeric cursor-pointer transition-colors"
                     >
                       Rp{val.toLocaleString('id-ID')}
                     </button>
@@ -711,16 +711,16 @@ export function KasirPos({
             </div>
 
             {/* Status Kembalian & Kurang Bayar */}
-            <div className="space-y-1 border-t border-slate-200 pt-2 text-xs">
-              <div className="flex items-center justify-between text-slate-700">
+            <div className="space-y-1 border-t border-slate-200 dark:border-zinc-800 pt-2 text-xs">
+              <div className="flex items-center justify-between text-slate-700 dark:text-zinc-300">
                 <span className="font-semibold">Kembalian dari Penjual:</span>
-                <span className="font-numeric font-bold text-emerald-700">
+                <span className="font-numeric font-bold text-emerald-700 dark:text-emerald-400">
                   Rp{changeAmount.toLocaleString('id-ID')}
                 </span>
               </div>
 
               {underpaidAmount > 0 && (
-                <div className="flex items-center justify-between text-amber-800">
+                <div className="flex items-center justify-between text-amber-800 dark:text-amber-400">
                   <span className="font-semibold">Sisa Kurang Bayar:</span>
                   <span className="font-numeric font-bold">Rp{underpaidAmount.toLocaleString('id-ID')}</span>
                 </div>
@@ -779,7 +779,7 @@ export function KasirPos({
                         type="button"
                         onClick={() => handleReprintReceipt(tx)}
                         title="Cetak Ulang Struk Thermal"
-                        className="rounded-lg bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 p-1.5 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                        className="rounded-lg bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 p-1.5 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 cursor-pointer"
                       >
                         <Printer className="h-3.5 w-3.5" />
                       </button>
@@ -970,7 +970,7 @@ export function KasirPos({
                             <button
                               type="button"
                               onClick={() => handleReprintReceipt(tx)}
-                              className="flex items-center gap-1 rounded-lg bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer shadow-xs"
+                              className="flex items-center gap-1 rounded-lg bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 cursor-pointer shadow-xs"
                               title="Cetak Ulang Struk Thermal"
                             >
                               <Printer className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
@@ -979,7 +979,7 @@ export function KasirPos({
                             <button
                               type="button"
                               onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
-                              className="rounded-lg bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 p-1 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                              className="rounded-lg bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 p-1 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 cursor-pointer"
                               title={isExpanded ? 'Tutup Rincian' : 'Lihat Rincian Barang'}
                             >
                               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
