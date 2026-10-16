@@ -152,7 +152,7 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Masukkan ID Pengguna (misal: kasir / owner)"
+                placeholder="Masukkan ID Pengguna"
                 className="w-full rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50/50 dark:bg-black pl-10 pr-3.5 py-2.5 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:bg-white dark:focus:bg-black transition-all font-medium"
                 required
                 autoFocus
@@ -170,7 +170,7 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
                 type="password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="Masukkan PIN (misal: 1234 / 8888)"
+                placeholder="Masukkan PIN Keamanan"
                 className="w-full rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50/50 dark:bg-black pl-10 pr-3.5 py-2.5 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:bg-white dark:focus:bg-black transition-all font-medium font-mono"
                 required
               />
@@ -186,37 +186,6 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
             {!isLoading && <ArrowRight className="w-3.5 h-3.5" />}
           </button>
         </form>
-
-        {/* Akses Cepat / Demo Credentials */}
-        <div className="mt-5 pt-4 border-t border-slate-200 dark:border-zinc-800">
-          <div className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 mb-2.5 text-center">
-            Pilihan Akses Cepat Masuk:
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setUsername('kasir');
-                setPin('1234');
-              }}
-              className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 p-2 text-center text-xs hover:border-emerald-700 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-zinc-900 transition-all cursor-pointer"
-            >
-              <div className="font-bold text-slate-900 dark:text-zinc-100">Kasir Timbangan</div>
-              <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono mt-0.5">kasir / 1234</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUsername('owner');
-                setPin('8888');
-              }}
-              className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 p-2 text-center text-xs hover:border-amber-600 dark:hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-zinc-900 transition-all cursor-pointer"
-            >
-              <div className="font-bold text-amber-700 dark:text-amber-400">Executive Owner</div>
-              <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono mt-0.5">owner / 8888</div>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
