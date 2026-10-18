@@ -204,7 +204,7 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
                 Solusi Cepat, Transparan, & Terpercaya.
               </h2>
               <p className="text-xs text-emerald-200/80 leading-relaxed font-normal">
-                Sistem ERP kasir timbangan digital terintegrasi 4 cabang gudang dengan kapabilitas offline-first.
+                Sistem ERP operasional timbangan dan pencatatan komoditas terpadu 4 gudang.
               </p>
             </div>
 
@@ -214,29 +214,15 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
                 <span className="w-6 h-6 rounded-lg bg-emerald-900/90 text-amber-300 flex items-center justify-center text-[10px] shrink-0">
                   <Scale className="w-3.5 h-3.5" />
                 </span>
-                <span>Timbangan Serial Alexa BFS Ready</span>
+                <span>Integrasi Timbangan Digital</span>
               </div>
               <div className="flex items-center gap-2.5 text-xs text-emerald-100 font-medium">
                 <span className="w-6 h-6 rounded-lg bg-emerald-900/90 text-emerald-300 flex items-center justify-center text-[10px] shrink-0">
                   <CloudCheck className="w-3.5 h-3.5" />
                 </span>
-                <span>Auto Sync Cloud & Dexie Lokal</span>
+                <span>Sinkronisasi Data Otomatis</span>
               </div>
             </div>
-          </div>
-
-          {/* Terminal Box */}
-          <div className={`mt-8 p-4 rounded-2xl relative z-10 border ${
-            isDark ? 'bg-[#0f172a]/70 border-slate-800' : 'bg-emerald-900/70 border-emerald-700/40 text-white'
-          }`}>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-emerald-300 font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Terminal Akses
-              </span>
-              <span className="text-amber-400 font-bold bg-amber-950/80 px-2 py-0.5 rounded-full text-[10px]">Siap Digunakan</span>
-            </div>
-            <p className="text-[11px] text-white font-medium mt-1">Sistem Otomatis Deteksi Hak Akses</p>
           </div>
 
           <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-emerald-700/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -251,16 +237,11 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
               <div>
                 <h3 className={`text-2xl font-black tracking-tight ${
                   isDark ? 'text-white' : 'text-slate-900'
-                }`}>Masuk Sistem</h3>
+                }`}>Masuk Akun</h3>
                 <p className="text-xs text-slate-400 font-medium mt-1">
-                  Peran akun (Owner / Kasir) otomatis ditentukan dari ID yang valid
+                  Silakan masukkan ID pengguna dan PIN Anda
                 </p>
               </div>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                isDark ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/60' : 'bg-emerald-50 text-emerald-800 border-emerald-100'
-              }`}>
-                v2.4 Prod
-              </span>
             </div>
 
             {/* Error Banner */}
@@ -275,7 +256,7 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
             <form onSubmit={handleLogin} className="mt-7 space-y-4">
               <div>
                 <label className={`block text-xs font-bold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  ID Pengguna / Username
+                  ID Pengguna
                 </label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -283,7 +264,7 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Masukkan ID Pengguna (misal: owner, kasir)"
+                    placeholder="Masukkan ID pengguna"
                     className={`w-full rounded-xl py-3 pl-10 pr-4 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-600 transition ${
                       isDark
                         ? 'bg-[#0f172a] border border-slate-800 text-white placeholder-slate-500'
@@ -298,9 +279,8 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    PIN Keamanan Akses
+                    PIN Keamanan
                   </label>
-                  <span className="text-[11px] font-semibold text-amber-500">Auto-Detect Role</span>
                 </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -308,7 +288,7 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
                     type="password"
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    placeholder="Masukkan PIN Keamanan"
+                    placeholder="Masukkan PIN keamanan"
                     className={`w-full rounded-xl py-3 pl-10 pr-4 text-sm font-semibold tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-emerald-600 transition ${
                       isDark
                         ? 'bg-[#0f172a] border border-slate-800 text-white placeholder-slate-500'
@@ -324,18 +304,17 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
                 disabled={isLoading}
                 className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] py-3.5 text-xs font-extrabold text-white shadow-md shadow-emerald-950/20 transition cursor-pointer disabled:opacity-60"
               >
-                {isLoading ? 'Memverifikasi Akses...' : 'Verifikasi & Masuk ke Sistem'}
+                {isLoading ? 'Memverifikasi...' : 'Masuk ke Sistem'}
                 {!isLoading && <ArrowRight className="w-4 h-4" />}
               </button>
             </form>
           </div>
 
-          {/* Quick Credential Hints */}
-          <div className={`mt-8 pt-4 border-t flex items-center justify-between text-[11px] ${
-            isDark ? 'border-slate-800/80 text-slate-400' : 'border-slate-100 text-slate-400'
+          {/* Footer Clean */}
+          <div className={`mt-8 pt-4 border-t text-center text-[11px] ${
+            isDark ? 'border-slate-800/80 text-slate-500' : 'border-slate-100 text-slate-400'
           }`}>
-            <span>Kasir: <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>kasir / 1234</strong></span>
-            <span>Owner: <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>owner / 8888</strong></span>
+            <span>&copy; PT DAVID &bull; Green Cycle Kuningan</span>
           </div>
         </div>
 
