@@ -2,9 +2,8 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Lock, User, ShieldAlert, ArrowRight } from 'lucide-react';
+import { Lock, User, ShieldAlert, ArrowRight, Sun, Moon, Scale, CloudCheck, CheckCircle2 } from 'lucide-react';
 import { UserRole } from '../../types';
-
 import { supabase, isSupabaseConfigured } from '../../lib/supabase/client';
 
 interface LoginPanelProps {
@@ -84,7 +83,6 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
               });
               return;
             } else {
-              // PIN salah untuk akun yang sudah diperbarui
               setErrorMsg('ID Pengguna atau PIN keamanan tidak sesuai. Periksa kembali input Anda.');
               setIsLoading(false);
               return;
@@ -141,97 +139,206 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
         return;
       }
 
-      setErrorMsg('ID Pengguna atau PIN keamanan tidak terdaftar. Periksa kembali input Anda.');
+      setErrorMsg('ID Pengguna atau PIN tidak terdaftar. Hubungi Administrator/Owner.');
     } catch (err) {
-      console.warn('Gagal memverifikasi login:', err);
-      setErrorMsg('Terjadi kendala verifikasi keamanan. Silakan coba lagi.');
+      console.error('Error saat login:', err);
+      setErrorMsg('Terjadi kesalahan sistem saat memproses login.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={`min-h-screen w-full flex items-center justify-center p-4 font-sans transition-colors duration-200 ${
-      isDark ? 'bg-black text-zinc-100' : 'bg-gradient-to-br from-slate-100 via-slate-50 to-emerald-50/30 text-slate-900'
+    <div className={`min-h-screen flex items-center justify-center p-4 md:p-6 transition-colors duration-200 ${
+      isDark ? 'bg-[#050811] text-slate-100' : 'bg-[#f1f5f3] text-slate-800'
     }`}>
-      <div className={`w-full max-w-sm rounded-3xl p-7 shadow-2xl border transition-colors duration-200 relative ${
-        isDark ? 'bg-black border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.8)]' : 'bg-white border-slate-200/80 shadow-slate-200/50'
+      {/* Theme Toggle Button */}
+      {onToggleTheme && (
+        <button
+          onClick={onToggleTheme}
+          type="button"
+          aria-label="Ubah Tema"
+          className={`fixed top-4 right-4 z-50 p-2.5 rounded-2xl border transition-all shadow-sm cursor-pointer ${
+            isDark
+              ? 'bg-[#0a0f1d] border-slate-800 text-amber-400 hover:bg-slate-800'
+              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+      )}
+
+      {/* Main Split Card */}
+      <div className={`w-full max-w-4xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col md:flex-row border transition-colors ${
+        isDark ? 'bg-[#0b1220] border-slate-800/80 shadow-black/60' : 'bg-white border-emerald-950/5 shadow-slate-300/40'
       }`}>
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex relative w-14 h-14 rounded-2xl overflow-hidden shadow-xs border border-amber-600/30 p-1 bg-white mb-1">
-            <Image
-              src="/logo.png"
-              alt="Green Cycle Kuningan"
-              fill
-              className="object-contain p-1"
-              priority
-            />
+        
+        {/* SISI KIRI: Brand & Terminal Info */}
+        <div className={`w-full md:w-5/12 p-8 md:p-10 flex flex-col justify-between relative ${
+          isDark ? 'bg-[#070b14] border-r border-slate-800/60' : 'bg-[#022c22] text-white'
+        }`}>
+          <div className="space-y-7 relative z-10">
+            {/* Logo Asli */}
+            <div className="flex items-center gap-3.5">
+              <div className="relative w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center border border-amber-500/40 shadow-sm shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="Green Cycle Kuningan"
+                  fill
+                  className="object-contain p-1"
+                  priority
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-base tracking-tight text-white">GREEN CYCLE</span>
+                  <span className="text-[9px] font-bold text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded tracking-wider">KUNINGAN</span>
+                </div>
+                <p className="text-[11px] text-emerald-300 font-medium tracking-tight mt-0.5">Bersih, Hijau, Berkelanjutan</p>
+              </div>
+            </div>
+
+            {/* Tagline */}
+            <div className="space-y-2.5">
+              <h2 className="text-2xl font-black leading-tight text-white tracking-tight">
+                Solusi Cepat, Transparan, & Terpercaya.
+              </h2>
+              <p className="text-xs text-emerald-200/80 leading-relaxed font-normal">
+                Sistem ERP kasir timbangan digital terintegrasi 4 cabang gudang dengan kapabilitas offline-first.
+              </p>
+            </div>
+
+            {/* Feature Bullets */}
+            <div className="space-y-2.5 pt-1">
+              <div className="flex items-center gap-2.5 text-xs text-emerald-100 font-medium">
+                <span className="w-6 h-6 rounded-lg bg-emerald-900/90 text-amber-300 flex items-center justify-center text-[10px] shrink-0">
+                  <Scale className="w-3.5 h-3.5" />
+                </span>
+                <span>Timbangan Serial Alexa BFS Ready</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-xs text-emerald-100 font-medium">
+                <span className="w-6 h-6 rounded-lg bg-emerald-900/90 text-emerald-300 flex items-center justify-center text-[10px] shrink-0">
+                  <CloudCheck className="w-3.5 h-3.5" />
+                </span>
+                <span>Auto Sync Cloud & Dexie Lokal</span>
+              </div>
+            </div>
           </div>
+
+          {/* Terminal Box */}
+          <div className={`mt-8 p-4 rounded-2xl relative z-10 border ${
+            isDark ? 'bg-[#0f172a]/70 border-slate-800' : 'bg-emerald-900/70 border-emerald-700/40 text-white'
+          }`}>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-emerald-300 font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Terminal Akses
+              </span>
+              <span className="text-amber-400 font-bold bg-amber-950/80 px-2 py-0.5 rounded-full text-[10px]">Siap Digunakan</span>
+            </div>
+            <p className="text-[11px] text-white font-medium mt-1">Sistem Otomatis Deteksi Hak Akses</p>
+          </div>
+
+          <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-emerald-700/10 rounded-full blur-2xl pointer-events-none"></div>
+        </div>
+
+        {/* SISI KANAN: Form Login Bersih */}
+        <div className={`w-full md:w-7/12 p-8 md:p-12 flex flex-col justify-between ${
+          isDark ? 'bg-[#0b1220]' : 'bg-white'
+        }`}>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-              Green Cycle Kuningan
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
-              Sistem ERP Kasir Timbangan Digital Terintegrasi
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className={`text-2xl font-black tracking-tight ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}>Masuk Sistem</h3>
+                <p className="text-xs text-slate-400 font-medium mt-1">
+                  Peran akun (Owner / Kasir) otomatis ditentukan dari ID yang valid
+                </p>
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                isDark ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/60' : 'bg-emerald-50 text-emerald-800 border-emerald-100'
+              }`}>
+                v2.4 Prod
+              </span>
+            </div>
+
+            {/* Error Banner */}
+            {errorMsg && (
+              <div className="mt-5 flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-500 animate-in fade-in">
+                <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                <span className="font-semibold">{errorMsg}</span>
+              </div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="mt-7 space-y-4">
+              <div>
+                <label className={`block text-xs font-bold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  ID Pengguna / Username
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Masukkan ID Pengguna (misal: owner, kasir)"
+                    className={`w-full rounded-xl py-3 pl-10 pr-4 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-600 transition ${
+                      isDark
+                        ? 'bg-[#0f172a] border border-slate-800 text-white placeholder-slate-500'
+                        : 'bg-[#EDF2E8] border border-transparent text-slate-800 placeholder-slate-400'
+                    }`}
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    PIN Keamanan Akses
+                  </label>
+                  <span className="text-[11px] font-semibold text-amber-500">Auto-Detect Role</span>
+                </div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    placeholder="Masukkan PIN Keamanan"
+                    className={`w-full rounded-xl py-3 pl-10 pr-4 text-sm font-semibold tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-emerald-600 transition ${
+                      isDark
+                        ? 'bg-[#0f172a] border border-slate-800 text-white placeholder-slate-500'
+                        : 'bg-[#EDF2E8] border border-transparent text-slate-800 placeholder-slate-400'
+                    }`}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] py-3.5 text-xs font-extrabold text-white shadow-md shadow-emerald-950/20 transition cursor-pointer disabled:opacity-60"
+              >
+                {isLoading ? 'Memverifikasi Akses...' : 'Verifikasi & Masuk ke Sistem'}
+                {!isLoading && <ArrowRight className="w-4 h-4" />}
+              </button>
+            </form>
+          </div>
+
+          {/* Quick Credential Hints */}
+          <div className={`mt-8 pt-4 border-t flex items-center justify-between text-[11px] ${
+            isDark ? 'border-slate-800/80 text-slate-400' : 'border-slate-100 text-slate-400'
+          }`}>
+            <span>Kasir: <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>kasir / 1234</strong></span>
+            <span>Owner: <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>owner / 8888</strong></span>
           </div>
         </div>
 
-        {/* Error Alert */}
-        {errorMsg && (
-          <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 animate-in fade-in">
-            <ShieldAlert className="w-4 h-4 flex-shrink-0 text-red-600 dark:text-red-400" />
-            <span className="font-medium">{errorMsg}</span>
-          </div>
-        )}
-
-        {/* Login Form */}
-        <form onSubmit={handleLogin} className="mt-5 space-y-3.5">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-              ID Pengguna / Username
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-400 dark:text-zinc-500 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Masukkan ID Pengguna"
-                className="w-full rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50/50 dark:bg-black pl-10 pr-3.5 py-2.5 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:bg-white dark:focus:bg-black transition-all font-medium"
-                required
-                autoFocus
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-              PIN Keamanan Akses
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 dark:text-zinc-500 absolute left-3.5 top-3" />
-              <input
-                type="password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="Masukkan PIN Keamanan"
-                className="w-full rounded-xl border border-slate-300 dark:border-zinc-800 bg-slate-50/50 dark:bg-black pl-10 pr-3.5 py-2.5 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:bg-white dark:focus:bg-black transition-all font-medium font-mono"
-                required
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 py-3 text-xs font-bold text-white shadow-md shadow-emerald-950/20 transition-all disabled:opacity-60 cursor-pointer"
-          >
-            {isLoading ? 'Memverifikasi Akses...' : 'Masuk ke Sistem'}
-            {!isLoading && <ArrowRight className="w-3.5 h-3.5" />}
-          </button>
-        </form>
       </div>
     </div>
   );

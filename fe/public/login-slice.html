@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Green Cycle Kuningan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            gc: {
+              emerald: '#064e3b',
+              'emerald-dark': '#022c22',
+              'emerald-mid': '#047857',
+              lime: '#84cc16',
+              amber: '#d97706',
+              card: '#F8FAF9',
+              pill: '#EDF2E8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body {
+      background-color: #f1f5f3;
+      font-family: "Plus Jakarta Sans", sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-0 m-0 flex items-center justify-center">
+
+  <!-- Main Card Container -->
+  <div class="w-full max-w-4xl mx-4 bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-emerald-950/5">
+
+    <!-- SISI KIRI: Branding & Status Hardware/Cloud -->
+    <div class="w-full md:w-5/12 bg-gc-emerald-dark p-8 md:p-10 flex flex-col justify-between text-white relative">
+      <div class="space-y-8 relative z-10">
+        <!-- Logo Asli -->
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center border border-amber-500/40 shadow-sm shrink-0">
+            <img src="./logo.png" alt="Logo Green Cycle" class="w-full h-full object-contain" />
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold text-base tracking-tight text-white">GREEN CYCLE</span>
+              <span class="text-[9px] font-bold text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded tracking-wider">KUNINGAN</span>
+            </div>
+            <p class="text-[11px] text-emerald-300 font-medium tracking-tight mt-0.5">Bersih, Hijau, Berkelanjutan</p>
+          </div>
+        </div>
+
+        <!-- Tagline & USP -->
+        <div class="space-y-3">
+          <h2 class="text-2xl font-extrabold leading-tight text-white">
+            Solusi Cepat, Transparan, & Terpercaya.
+          </h2>
+          <p class="text-xs text-emerald-200/80 leading-relaxed font-normal">
+            Sistem ERP kasir timbangan digital terintegrasi 4 cabang gudang dengan mode offline-first.
+          </p>
+        </div>
+
+        <!-- Mini Feature Badges -->
+        <div class="space-y-2.5 pt-1">
+          <div class="flex items-center gap-2.5 text-xs text-emerald-100 font-medium">
+            <span class="w-6 h-6 rounded-lg bg-emerald-900/90 text-amber-300 flex items-center justify-center text-[10px]">
+              <i class="fa-solid fa-weight-scale"></i>
+            </span>
+            <span>Timbangan Serial Alexa BFS Ready</span>
+          </div>
+          <div class="flex items-center gap-2.5 text-xs text-emerald-100 font-medium">
+            <span class="w-6 h-6 rounded-lg bg-emerald-900/90 text-emerald-300 flex items-center justify-center text-[10px]">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </span>
+            <span>Auto Sync Cloud & Dexie Lokal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Card Info -->
+      <div class="mt-8 bg-emerald-900/70 border border-emerald-700/40 p-4 rounded-2xl relative z-10">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-emerald-300 font-semibold">Terminal Akses</span>
+          <span class="text-amber-400 font-bold bg-amber-950/80 px-2 py-0.5 rounded-full text-[10px]">Siap Digunakan</span>
+        </div>
+        <p class="text-[11px] text-white font-medium mt-1">Sistem Otomatis Deteksi Hak Akses</p>
+      </div>
+
+      <!-- Subtle Glow Shape -->
+      <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-emerald-700/20 rounded-full blur-2xl pointer-events-none"></div>
+    </div>
+
+    <!-- SISI KANAN: Form Login Clean (Tanpa Pilih Role) -->
+    <div class="w-full md:w-7/12 p-8 md:p-12 flex flex-col justify-between bg-white">
+      <div>
+        <!-- Heading -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-2xl font-extrabold text-gc-emerald-dark tracking-tight">Masuk Sistem</h3>
+            <p class="text-xs text-slate-500 font-medium mt-1">Peran akun (Owner / Kasir) otomatis ditentukan dari ID yang valid</p>
+          </div>
+          <span class="text-xs font-bold text-gc-emerald-mid bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+            v2.4 Prod
+          </span>
+        </div>
+
+        <!-- Form Inputs -->
+        <form class="mt-8 space-y-5">
+          <!-- Username / ID -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">ID Pengguna / Username</label>
+            <div class="relative">
+              <i class="fa-regular fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <input 
+                type="text" 
+                placeholder="Masukkan ID pengguna (misal: owner, kasir)" 
+                class="w-full bg-gc-pill rounded-xl py-3 pl-9 pr-4 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-gc-emerald-mid border border-transparent focus:border-transparent transition"
+                required
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <!-- PIN -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-bold text-slate-700">PIN Keamanan Akses</label>
+              <a href="#" class="text-[11px] font-bold text-amber-600 hover:underline">Bantuan Akses?</a>
+            </div>
+            <div class="relative">
+              <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <input 
+                type="password" 
+                placeholder="Masukkan PIN keamanan" 
+                class="w-full bg-gc-pill rounded-xl py-3 pl-9 pr-4 text-sm font-semibold tracking-widest text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-gc-emerald-mid border border-transparent focus:border-transparent transition font-mono"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Tombol Masuk -->
+          <button 
+            type="submit" 
+            class="w-full mt-3 bg-gc-emerald-mid hover:bg-gc-emerald-dark text-white font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-950/20 transition active:scale-[0.99] cursor-pointer"
+          >
+            <span>Verifikasi & Masuk ke Sistem</span>
+            <i class="fa-solid fa-arrow-right text-[11px]"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Quick Credential Helper Footer -->
+      <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+        <span>Kasir: <strong class="text-slate-600 font-mono">kasir / 1234</strong></span>
+        <span>Owner: <strong class="text-slate-600 font-mono">owner / 8888</strong></span>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

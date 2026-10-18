@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Green Cycle Kuningan - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gc: {
+              emerald: '#064e3b',       /* emerald-900 */
+              'emerald-dark': '#022c22',/* emerald-950 */
+              'emerald-mid': '#047857', /* emerald-700 */
+              'emerald-light': '#10b981',
+              lime: '#84cc16',          /* Green cycle accent */
+              amber: '#d97706',         /* Kuningan gold/amber */
+              card: '#F8FAF9',
+              pill: '#EDF2E8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body {
+      background-color: #f1f5f3;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-0 m-0 flex justify-center text-slate-800">
+
+  <!-- Full Frame Container (No margins / borders on edges) -->
+  <div class="w-full min-h-screen bg-white p-5 md:p-7 flex flex-col lg:flex-row gap-6">
+
+    <!-- 1. SIDEBAR (Green Cycle Theme: Deep Emerald & Warm Amber) -->
+    <aside class="w-full lg:w-64 bg-gc-emerald-dark rounded-[24px] p-5 flex flex-col justify-between text-white shrink-0 shadow-lg">
+      <div class="space-y-6">
+        <!-- Logo Brand -->
+        <div class="flex items-center gap-3 px-1">
+          <div class="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center border border-amber-500/40 shrink-0">
+            <img src="/logo.png" alt="Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23047857\'><path d=\'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5\'/></svg>'" />
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold text-sm tracking-tight leading-none text-white">GREEN CYCLE</span>
+              <span class="text-[9px] font-bold text-amber-400 bg-amber-950/80 px-1 py-0.5 rounded tracking-wide">KUNINGAN</span>
+            </div>
+            <p class="text-[10px] text-emerald-300 font-medium tracking-tight mt-1">Bersih, Hijau, Berkelanjutan</p>
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="space-y-1 text-xs font-semibold">
+          <a href="#" class="flex items-center gap-3 px-3.5 py-3 bg-gc-emerald-mid text-white rounded-xl shadow-xs">
+            <i class="fa-solid fa-table-columns text-sm text-emerald-200"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 text-emerald-200/80 hover:text-white hover:bg-emerald-900/40 rounded-xl transition">
+            <i class="fa-solid fa-weight-scale text-sm"></i>
+            <span>Kasir Timbangan</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 text-emerald-200/80 hover:text-white hover:bg-emerald-900/40 rounded-xl transition">
+            <i class="fa-solid fa-boxes-stacked text-sm"></i>
+            <span>Stok 4 Gudang</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 text-emerald-200/80 hover:text-white hover:bg-emerald-900/40 rounded-xl transition">
+            <i class="fa-solid fa-truck-ramp-box text-sm"></i>
+            <span>Kirim ke Pabrik</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3.5 py-2.5 text-emerald-200/80 hover:text-white hover:bg-emerald-900/40 rounded-xl transition">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-cash-register text-sm"></i>
+              <span>Shift Kasir</span>
+            </div>
+            <span class="bg-amber-400 text-gc-emerald-dark text-[9px] font-extrabold px-1.5 py-0.5 rounded-full">Aktif</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 text-emerald-200/80 hover:text-white hover:bg-emerald-900/40 rounded-xl transition">
+            <i class="fa-solid fa-users text-sm"></i>
+            <span>Absensi & Kasbon</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 text-emerald-200/80 hover:text-white hover:bg-emerald-900/40 rounded-xl transition">
+            <i class="fa-solid fa-chart-line text-sm"></i>
+            <span>Laba / Rugi</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 text-emerald-200/80 hover:text-white hover:bg-emerald-900/40 rounded-xl transition">
+            <i class="fa-solid fa-gear text-sm"></i>
+            <span>Pengaturan</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Hardware Device Card -->
+      <div class="mt-6 bg-emerald-900/70 border border-emerald-700/40 text-white p-3.5 rounded-xl">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Alexa BFS Scale</span>
+          </div>
+          <span class="text-[10px] text-amber-300 font-mono">COM3</span>
+        </div>
+        <p class="font-bold text-xs mt-1.5 text-emerald-100">Koneksi Timbangan Siap</p>
+      </div>
+    </aside>
+
+    <!-- 2. CENTER CONTENT (Data Feed & Visuals) -->
+    <main class="flex-1 space-y-5 min-w-0">
+      
+      <!-- Top Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 class="text-xl font-black text-gc-emerald-dark tracking-tight flex items-center gap-2">
+            Selamat Datang, Admin Kasir 👋
+          </h1>
+          <p class="text-xs text-slate-500 font-medium">Operasional timbangan & transaksi Green Cycle Kuningan</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="relative w-full sm:w-60">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input 
+              type="text" 
+              placeholder="Cari nota, barang, suplier..." 
+              class="w-full bg-gc-pill rounded-full py-2 pl-9 pr-4 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-gc-emerald-mid"
+            />
+          </div>
+          <div class="w-9 h-9 rounded-full bg-gc-emerald-mid text-white flex items-center justify-center font-bold text-xs ring-2 ring-emerald-100 shrink-0">
+            GC
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 Commodity Cards -->
+      <div>
+        <div class="flex items-center justify-between mb-2.5">
+          <h2 class="font-extrabold text-xs text-slate-900 uppercase tracking-wider">Harga Komoditas Hari Ini</h2>
+          <span class="text-xs font-bold text-gc-emerald-mid hover:underline cursor-pointer">Lihat Semua</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          
+          <div class="bg-gc-card p-4 rounded-xl border border-emerald-950/5 flex flex-col justify-between hover:shadow-xs transition">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-cubes-stacked"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-xs text-slate-900">Tembaga Super</h3>
+                <span class="text-[10px] text-slate-500">Stok: 3.420 kg</span>
+              </div>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-xs">
+              <span class="font-black text-gc-emerald-dark">Rp 115.000<span class="text-[10px] text-slate-400 font-normal">/kg</span></span>
+              <span class="text-[9px] font-bold text-gc-emerald-mid bg-emerald-100 px-1.5 py-0.5 rounded">+2.4%</span>
+            </div>
+          </div>
+
+          <div class="bg-gc-card p-4 rounded-xl border border-emerald-950/5 flex flex-col justify-between hover:shadow-xs transition">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-emerald-600/10 text-emerald-800 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-xs text-slate-900">Besi Super / Padu</h3>
+                <span class="text-[10px] text-slate-500">Stok: 24.180 kg</span>
+              </div>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-xs">
+              <span class="font-black text-gc-emerald-dark">Rp 6.800<span class="text-[10px] text-slate-400 font-normal">/kg</span></span>
+              <span class="text-[9px] font-bold text-gc-emerald-mid bg-emerald-100 px-1.5 py-0.5 rounded">Stabil</span>
+            </div>
+          </div>
+
+          <div class="bg-gc-card p-4 rounded-xl border border-emerald-950/5 flex flex-col justify-between hover:shadow-xs transition">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-amber-600/10 text-amber-800 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-drum-steelpan"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-xs text-slate-900">Kuningan Cor</h3>
+                <span class="text-[10px] text-slate-500">Stok: 1.850 kg</span>
+              </div>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-xs">
+              <span class="font-black text-gc-emerald-dark">Rp 68.500<span class="text-[10px] text-slate-400 font-normal">/kg</span></span>
+              <span class="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">-1.1%</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Middle Grid: Chart Tonase + Status 4 Gudang -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Tonase Harian Chart -->
+        <div class="bg-gc-card p-4 rounded-xl border border-emerald-950/5">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h2 class="font-extrabold text-xs text-slate-900">Volume Masuk (Ton)</h2>
+              <span class="text-[10px] font-bold text-gc-emerald-mid flex items-center gap-1">
+                <i class="fa-solid fa-arrow-trend-up"></i> +12% minggu ini
+              </span>
+            </div>
+            <span class="text-[10px] font-bold bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-600">
+              Mingguan
+            </span>
+          </div>
+
+          <div class="h-36 flex items-end justify-between pt-5 px-2 relative">
+            <div class="absolute top-1 left-[58%] -translate-x-1/2 bg-gc-emerald-dark text-white text-[9px] px-2 py-0.5 rounded font-bold shadow-xs">
+              14.2 Ton &bull; Kamis
+            </div>
+            <div class="flex flex-col items-center gap-1.5"><div class="w-3 bg-slate-300 rounded-full" style="height: 50px;"></div><span class="text-[9px] text-slate-400 font-bold">Sen</span></div>
+            <div class="flex flex-col items-center gap-1.5"><div class="w-3 bg-slate-300 rounded-full" style="height: 75px;"></div><span class="text-[9px] text-slate-400 font-bold">Sel</span></div>
+            <div class="flex flex-col items-center gap-1.5"><div class="w-3 bg-slate-300 rounded-full" style="height: 40px;"></div><span class="text-[9px] text-slate-400 font-bold">Rab</span></div>
+            <div class="flex flex-col items-center gap-1.5"><div class="w-3 bg-gc-emerald-mid rounded-full ring-2 ring-emerald-300/40" style="height: 105px;"></div><span class="text-[9px] text-gc-emerald-dark font-black">Kam</span></div>
+            <div class="flex flex-col items-center gap-1.5"><div class="w-3 bg-slate-300 rounded-full" style="height: 80px;"></div><span class="text-[9px] text-slate-400 font-bold">Jum</span></div>
+            <div class="flex flex-col items-center gap-1.5"><div class="w-3 bg-slate-300 rounded-full" style="height: 60px;"></div><span class="text-[9px] text-slate-400 font-bold">Sab</span></div>
+            <div class="flex flex-col items-center gap-1.5"><div class="w-3 bg-slate-300 rounded-full" style="height: 25px;"></div><span class="text-[9px] text-slate-400 font-bold">Min</span></div>
+          </div>
+        </div>
+
+        <!-- Operasional 4 Gudang -->
+        <div class="bg-gc-card p-4 rounded-xl border border-emerald-950/5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="font-extrabold text-xs text-slate-900">Operasional 4 Gudang</h2>
+            <span class="text-[10px] font-bold text-slate-400">Semua Buka</span>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-md bg-emerald-100 text-gc-emerald-dark font-black text-[10px] flex items-center justify-center">G1</span>
+                <div>
+                  <p class="font-bold text-slate-900 text-[11px]">Gudang Pusat Kuningan</p>
+                  <p class="text-[9px] text-slate-400">Kasir: Hendra &bull; Kas: Rp 42.5jt</p>
+                </div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-slate-300 text-[9px]"></i>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-md bg-emerald-100 text-gc-emerald-dark font-black text-[10px] flex items-center justify-center">G2</span>
+                <div>
+                  <p class="font-bold text-slate-900 text-[11px]">Gudang Cabang Cilimus</p>
+                  <p class="text-[9px] text-slate-400">Kasir: Siti &bull; Kas: Rp 18.2jt</p>
+                </div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-slate-300 text-[9px]"></i>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-md bg-emerald-100 text-gc-emerald-dark font-black text-[10px] flex items-center justify-center">G3</span>
+                <div>
+                  <p class="font-bold text-slate-900 text-[11px]">Gudang Luragung</p>
+                  <p class="text-[9px] text-slate-400">Kasir: Budi &bull; Kas: Rp 23.0jt</p>
+                </div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-slate-300 text-[9px]"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Table -->
+      <div class="bg-gc-card p-4 rounded-xl border border-emerald-950/5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="font-extrabold text-xs text-slate-900">Transaksi Timbangan Terbaru</h2>
+            <span class="text-[10px] text-slate-400">Tersimpan otomatis di penyimpanan lokal Dexie</span>
+          </div>
+          <button class="px-3 py-1 bg-gc-emerald-mid text-white rounded-lg text-[11px] font-bold hover:bg-gc-emerald-dark transition flex items-center gap-1.5 shadow-xs">
+            <i class="fa-solid fa-plus text-[9px]"></i> Nota Baru
+          </button>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between p-2.5 bg-white rounded-lg border border-slate-100 text-xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-50 text-gc-emerald-mid flex items-center justify-center font-bold text-xs">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+              <div>
+                <p class="font-bold text-slate-900">#TK-0928 &bull; Pengepul Pak Agus</p>
+                <p class="text-[10px] text-slate-400">Besi Super (1.450 kg), Tembaga (85 kg)</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="font-black text-gc-emerald-dark">Rp 19.635.000</p>
+              <span class="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">Selesai &bull; Tunai</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between p-2.5 bg-white rounded-lg border border-slate-100 text-xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-50 text-gc-emerald-mid flex items-center justify-center font-bold text-xs">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+              <div>
+                <p class="font-bold text-slate-900">#TK-0929 &bull; Lapak Barokah</p>
+                <p class="text-[10px] text-slate-400">Kardus Press (2.200 kg)</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="font-black text-gc-emerald-dark">Rp 4.400.000</p>
+              <span class="text-[9px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">Menimbang di G1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- 3. RIGHT PANEL (Status Cloud, Kalender, Kirim Pabrik) -->
+    <aside class="w-full lg:w-72 space-y-4 shrink-0">
+      
+      <!-- Cloud Sync Banner -->
+      <div class="bg-gc-emerald-dark text-white p-4 rounded-xl border border-emerald-800 shadow-xs">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Cloud Sync</span>
+          </div>
+          <span class="text-[9px] font-bold text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded">Realtime</span>
+        </div>
+        <p class="font-bold text-xs leading-snug">Data 4 Gudang Terintegrasi</p>
+        <p class="text-[10px] text-emerald-200/80 mt-1">Sistem offline-first Dexie.js aktif.</p>
+        <button class="w-full mt-3 bg-amber-500 hover:bg-amber-600 text-slate-950 py-1.5 rounded-lg text-xs font-black transition">
+          Sinkron Sekarang
+        </button>
+      </div>
+
+      <!-- Mini Calendar -->
+      <div class="bg-gc-card p-4 rounded-xl border border-emerald-950/5">
+        <div class="flex items-center justify-between mb-3">
+          <button class="text-slate-400 hover:text-slate-700 text-xs"><i class="fa-solid fa-chevron-left"></i></button>
+          <span class="font-extrabold text-xs text-slate-800">Oktober 2026</span>
+          <button class="text-slate-400 hover:text-slate-700 text-xs"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-slate-400 mb-1.5">
+          <span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-slate-700">
+          <span class="p-1 text-slate-300">28</span><span class="p-1 text-slate-300">29</span><span class="p-1 text-slate-300">30</span>
+          <span class="p-1">1</span><span class="p-1">2</span><span class="p-1">3</span><span class="p-1">4</span>
+          <span class="p-1">5</span><span class="p-1">6</span><span class="p-1">7</span><span class="p-1">8</span><span class="p-1">9</span><span class="p-1">10</span><span class="p-1">11</span>
+          <span class="p-1">12</span><span class="p-1">13</span><span class="p-1">14</span><span class="p-1">15</span><span class="p-1">16</span><span class="p-1">17</span>
+          <!-- Active Date: Brand Emerald -->
+          <span class="p-1 bg-gc-emerald-mid text-white font-black rounded-full">18</span>
+          <span class="p-1">19</span><span class="p-1">20</span><span class="p-1">21</span><span class="p-1">22</span><span class="p-1">23</span><span class="p-1">24</span>
+        </div>
+      </div>
+
+      <!-- Jadwal Kirim Pabrik -->
+      <div class="bg-gc-card p-4 rounded-xl border border-emerald-950/5">
+        <div class="flex items-center justify-between mb-2.5">
+          <h3 class="font-extrabold text-xs text-slate-900">Jadwal Kirim Pabrik</h3>
+          <span class="text-[9px] font-bold text-gc-emerald-mid bg-emerald-100 px-1.5 py-0.5 rounded">Hari Ini</span>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100">
+            <div>
+              <p class="font-bold text-slate-900 text-[11px]">PT Krakatau Steel</p>
+              <p class="text-[9px] text-slate-400">Besi Super &bull; 15 Ton</p>
+            </div>
+            <span class="text-[9px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">Muat</span>
+          </div>
+          <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100">
+            <div>
+              <p class="font-bold text-slate-900 text-[11px]">Peleburan Tegal</p>
+              <p class="text-[9px] text-slate-400">Kuningan &bull; 4 Ton</p>
+            </div>
+            <span class="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">Terkirim</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+
+</body>
+</html>
