@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import {
+  LayoutDashboard,
   Scale,
   Clock,
   Users,
@@ -40,6 +41,13 @@ export function Sidebar({
   onToggleTheme,
 }: SidebarProps) {
   const allNavItems = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard Ringkasan',
+      icon: LayoutDashboard,
+      roleRequired: 'ALL',
+      description: 'Ringkasan komoditas & gudang',
+    },
     {
       id: 'pos',
       label: 'Kasir Timbangan',

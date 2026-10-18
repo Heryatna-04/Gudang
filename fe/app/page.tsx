@@ -12,6 +12,7 @@ import { StockMutationManagement } from '../components/mutation/stock-mutation';
 import { DebtReceivableManagement } from '../components/debt/debt-receivable';
 import { EmployeeManagement } from '../components/employees/employee-management';
 import { ProfileIdentity } from '../components/profile/profile-identity';
+import { ExecutiveDashboardOverview } from '../components/owner/executive-overview';
 import {
   MOCK_WAREHOUSES,
   MOCK_PRODUCTS,
@@ -91,7 +92,7 @@ export default function Home() {
   const [isAuthChecked, setIsAuthChecked] = useState<boolean>(false);
   const [activeRole, setActiveRole] = useState<UserRole>('ADMIN');
   const [activeWarehouseId, setActiveWarehouseId] = useState<number>(1);
-  const [activeTab, setActiveTab] = useState<string>('pos');
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
 
   // Application state (Di-reset bersih untuk simulasi manual langsung dari 0)
   const [products, setProducts] = useState<Product[]>(() =>
@@ -571,7 +572,9 @@ export default function Home() {
       localStorage.removeItem('gc_kuningan_auth_user');
     }
     if (user.role === 'ADMIN') {
-      setActiveTab('pos');
+      setActiveTab('dashboard');
+    } else {
+      setActiveTab('dashboard');
     }
     success(`Selamat datang, ${user.fullName}`, 'Login Berhasil');
   };
@@ -980,6 +983,8 @@ export default function Home() {
 
   const getTabTitle = () => {
     switch (activeTab) {
+      case 'dashboard':
+        return 'Ringkasan Eksekutif & Operasional';
       case 'pos':
         return 'Kasir Timbangan Digital & Struk';
       case 'sales':
@@ -1131,6 +1136,18 @@ export default function Home() {
 
         {/* Scrollable Page Viewport */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl w-full mx-auto">
+          {activeTab === 'dashboard' && (
+            <ExecutiveDashboardOverview
+              activeRole={activeRole}
+              currentUser={currentUser}
+              products={products}
+              transactions={transactions}
+              factorySales={salesList}
+              isDark={isDark}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
           {activeTab === 'pos' && (
             <KasirPos
               products={products}
