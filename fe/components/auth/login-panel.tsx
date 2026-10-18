@@ -49,7 +49,34 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
         }
       }
 
-      // 2. Fallback Kredensial Internal Aman (Bekerja saat Offline / Tanpa Koneksi)
+      // 2. Cek Kredensial Lokal Terbaru (Hasil Ubah Password / Offline)
+      try {
+        const localCreds = typeof window !== 'undefined' ? localStorage.getItem('gc_custom_credentials') : null;
+        if (localCreds) {
+          const credsMap = JSON.parse(localCreds);
+          const userCred = credsMap[cleanUser];
+          if (userCred) {
+            if (userCred.pin === cleanPin) {
+              setIsLoading(false);
+              onLoginSuccess({
+                fullName: userCred.fullName,
+                role: userCred.role,
+                username: userCred.username || cleanUser,
+              });
+              return;
+            } else {
+              // PIN salah untuk akun yang sudah diperbarui
+              setErrorMsg('ID Pengguna atau PIN keamanan tidak sesuai. Periksa kembali input Anda.');
+              setIsLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Gagal membaca kredensial lokal:', err);
+      }
+
+      // 3. Fallback Kredensial Internal Aman (Bekerja saat Akun Default)
       if (cleanUser === 'owner' && (cleanPin === '8888' || cleanPin === '123456')) {
         setIsLoading(false);
         onLoginSuccess({

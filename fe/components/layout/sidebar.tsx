@@ -12,6 +12,7 @@ import {
   LogOut,
   ShieldCheck,
   UserPlus,
+  KeyRound,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -101,6 +102,13 @@ export function Sidebar({
       icon: BarChart3,
       roleRequired: 'OWNER',
       description: 'Omzet riil, margin & ekspor',
+    },
+    {
+      id: 'profile',
+      label: 'Profil & Keamanan',
+      icon: KeyRound,
+      roleRequired: 'ALL',
+      description: 'Identitas & ganti password',
     },
   ];
 

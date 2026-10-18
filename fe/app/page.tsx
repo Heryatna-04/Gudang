@@ -11,6 +11,7 @@ import { OpexManagement } from '../components/opex/opex-management';
 import { StockMutationManagement } from '../components/mutation/stock-mutation';
 import { DebtReceivableManagement } from '../components/debt/debt-receivable';
 import { EmployeeManagement } from '../components/employees/employee-management';
+import { ProfileIdentity } from '../components/profile/profile-identity';
 import {
   MOCK_WAREHOUSES,
   MOCK_PRODUCTS,
@@ -41,7 +42,7 @@ import {
   PayrollRecord,
   Employee,
 } from '../types';
-import { Sparkles, Sun, Moon, LogOut } from 'lucide-react';
+import { Sparkles, Sun, Moon, LogOut, ShieldCheck, User } from 'lucide-react';
 import { OfflineSyncService } from '../lib/db/sync-service';
 import { localDB } from '../lib/db/dexie-db';
 import { LoginPanel } from '../components/auth/login-panel';
@@ -564,6 +565,13 @@ export default function Home() {
     success(`Selamat datang, ${user.fullName}`, 'Login Berhasil');
   };
 
+  const handleUpdateUserProfile = (updated: { fullName: string; role: UserRole; username: string }) => {
+    setCurrentUser(updated);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('gc_kuningan_auth_user', JSON.stringify(updated));
+    }
+  };
+
   const handleLogout = () => {
     if (confirm('Keluar dari sistem Green Cycle Kuningan?')) {
       if (typeof window !== 'undefined') {
@@ -577,9 +585,9 @@ export default function Home() {
     }
   };
 
-  // Guard role: Jika role kasir (ADMIN), kunci akses agar tidak bisa membuka tab khusus Owner
+  // Guard role: Jika role kasir (ADMIN), kunci akses agar tidak bisa membuka tab khusus Owner (Laba/Rugi, Kelola Pegawai, Hutang Piutang)
   React.useEffect(() => {
-    if (activeRole === 'ADMIN' && (activeTab === 'sales' || activeTab === 'owner' || activeTab === 'employees' || activeTab === 'debts')) {
+    if (activeRole === 'ADMIN' && (activeTab === 'owner' || activeTab === 'employees' || activeTab === 'debts')) {
       setActiveTab('pos');
     }
   }, [activeRole, activeTab]);
@@ -981,6 +989,8 @@ export default function Home() {
         return 'Manajemen Hutang & Piutang (AP / AR)';
       case 'owner':
         return 'Executive Overview: Laba / Rugi Konsolidasi';
+      case 'profile':
+        return 'Profil Pengguna & Keamanan Akun';
       default:
         return 'Dashboard';
     }
@@ -1066,18 +1076,30 @@ export default function Home() {
               </div>
             </button>
 
-            {activeRole === 'ADMIN' ? (
-              <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold border shadow-2xs ${
-                isDark ? 'bg-zinc-900 text-zinc-300 border-zinc-800' : 'bg-slate-100 text-slate-800 border-slate-300'
-              }`}>
-                <span>Kasir Operasional</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-900 px-3 py-1 text-[11px] font-bold text-amber-300 border border-amber-600/40 shadow-xs">
+            {/* Tombol Profil Pengguna & Keamanan di Header */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('profile')}
+              title="Buka Identitas & Keamanan Akun"
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold border transition-all cursor-pointer ${
+                activeTab === 'profile'
+                  ? 'ring-2 ring-emerald-500 shadow-xs'
+                  : ''
+              } ${
+                activeRole === 'OWNER'
+                  ? 'bg-emerald-900 text-amber-300 border-amber-600/40 shadow-xs hover:bg-emerald-800'
+                  : isDark
+                  ? 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
+                  : 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              {activeRole === 'OWNER' ? (
                 <Sparkles className="h-3 w-3 text-amber-400" />
-                <span>Executive Owner Mode</span>
-              </div>
-            )}
+              ) : (
+                <ShieldCheck className="h-3 w-3 text-emerald-600" />
+              )}
+              <span className="max-w-[140px] truncate">{currentUser.fullName}</span>
+            </button>
 
             {/* Tombol Logout Cepat di Header */}
             <button
@@ -1226,6 +1248,16 @@ export default function Home() {
               onUpdateProductPrices={handleUpdateProductPrices}
               isDark={isDark}
               onToggleTheme={toggleTheme}
+            />
+          )}
+
+          {activeTab === 'profile' && (
+            <ProfileIdentity
+              currentUser={currentUser}
+              activeWarehouseName={activeWarehouse.name}
+              onUpdateCurrentUser={handleUpdateUserProfile}
+              isDark={isDark}
+              onLogout={handleLogout}
             />
           )}
         </main>

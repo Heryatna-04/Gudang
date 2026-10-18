@@ -31,6 +31,19 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface AppAccount {
+  id?: string;
+  username: string;
+  pin: string;
+  fullName: string;
+  role: UserRole;
+  warehouseId?: number | null;
+  phone?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface CashShift {
   id: string;
   warehouseId: number;
