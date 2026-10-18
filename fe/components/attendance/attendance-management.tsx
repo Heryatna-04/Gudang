@@ -34,6 +34,7 @@ import {
   PayrollRecord,
   UserRole,
 } from '../../types';
+import { ChoiceGroup } from '../ui/choice-group';
 
 interface AttendanceManagementProps {
   employees: Employee[];
@@ -253,32 +254,17 @@ export function AttendanceManagement({
 
         {/* Quick Stats & Shift Selector & 1-Click Hadir Semua */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Shift Selector (Hanya Pagi & Malam) */}
-          <div className={`flex items-center rounded-xl border p-1 transition-colors ${
-            isDark ? 'border-zinc-800 bg-black' : 'border-slate-200 bg-slate-50'
-          }`}>
-            {(
-              [
-                { id: 'PAGI', label: 'Shift Pagi' },
-                { id: 'MALAM', label: 'Shift Malam' },
-              ] as const
-            ).map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setSelectedShift(s.id)}
-                className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
-                  selectedShift === s.id
-                    ? 'bg-emerald-900 text-white shadow-xs'
-                    : isDark
-                    ? 'text-zinc-400 hover:text-zinc-200'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+          {/* Shift Selector Eduplex Choice Group */}
+          <ChoiceGroup<WorkShift>
+            options={[
+              { value: 'PAGI', label: 'Shift Pagi' },
+              { value: 'MALAM', label: 'Shift Malam' },
+            ]}
+            value={selectedShift}
+            onChange={(val) => setSelectedShift(val)}
+            size="sm"
+            isDark={isDark}
+          />
 
           <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${
             isDark ? 'border-zinc-800 bg-black text-zinc-200' : 'border-slate-200 bg-slate-50 text-slate-700'

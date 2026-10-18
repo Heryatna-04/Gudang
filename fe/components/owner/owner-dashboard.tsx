@@ -38,6 +38,7 @@ import {
 } from '../../types';
 import { exportEnterpriseReportExcel } from '../../lib/export/excel-generator';
 import { UserAccountService } from '../../lib/auth/user-account-service';
+import { ChoiceGroup } from '../ui/choice-group';
 
 interface OwnerDashboardProps {
   activeRole: UserRole;
@@ -493,90 +494,30 @@ export function OwnerDashboard({
           </div>
         </div>
 
-        {/* Tab Segmentasi Filter Mode */}
+        {/* Tab Segmentasi Filter Mode Custom Choice Group */}
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setFilterMode('ALL')}
-            className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              filterMode === 'ALL'
-                ? 'bg-emerald-900 text-white shadow-xs'
-                : isDark
-                ? 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 border border-zinc-800/60'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Semua Waktu
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setFilterMode('DAILY');
-              if (!selectedDate) setSelectedDate(latestDataDate);
+          <ChoiceGroup<DateFilterMode>
+            options={[
+              { value: 'ALL', label: 'Semua Waktu' },
+              { value: 'DAILY', label: 'Harian' },
+              { value: 'WEEKLY', label: 'Mingguan' },
+              { value: 'MONTHLY', label: 'Bulanan' },
+              { value: 'CUSTOM', label: 'Kustom' },
+            ]}
+            value={filterMode}
+            onChange={(mode) => {
+              setFilterMode(mode);
+              if (mode === 'DAILY' && !selectedDate) setSelectedDate(latestDataDate);
+              if (mode === 'WEEKLY' && !selectedWeekDate) setSelectedWeekDate(latestDataDate);
+              if (mode === 'MONTHLY' && !selectedMonth) setSelectedMonth(latestDataDate.slice(0, 7));
+              if (mode === 'CUSTOM') {
+                if (!customStartDate) setCustomStartDate(latestDataDate);
+                if (!customEndDate) setCustomEndDate(latestDataDate);
+              }
             }}
-            className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              filterMode === 'DAILY'
-                ? 'bg-emerald-900 text-white shadow-xs'
-                : isDark
-                ? 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 border border-zinc-800/60'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Per Tanggal (Harian)
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setFilterMode('WEEKLY');
-              if (!selectedWeekDate) setSelectedWeekDate(latestDataDate);
-            }}
-            className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              filterMode === 'WEEKLY'
-                ? 'bg-emerald-900 text-white shadow-xs'
-                : isDark
-                ? 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 border border-zinc-800/60'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Per Minggu (Mingguan)
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setFilterMode('MONTHLY');
-              if (!selectedMonth) setSelectedMonth(latestDataDate.slice(0, 7));
-            }}
-            className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              filterMode === 'MONTHLY'
-                ? 'bg-emerald-900 text-white shadow-xs'
-                : isDark
-                ? 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 border border-zinc-800/60'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Per Bulan (Bulanan)
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setFilterMode('CUSTOM');
-              if (!customStartDate) setCustomStartDate(latestDataDate);
-              if (!customEndDate) setCustomEndDate(latestDataDate);
-            }}
-            className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              filterMode === 'CUSTOM'
-                ? 'bg-emerald-900 text-white shadow-xs'
-                : isDark
-                ? 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 border border-zinc-800/60'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            Rentang Kustom
-          </button>
+            size="sm"
+            isDark={isDark}
+          />
         </div>
 
         {/* Input Kontrol Kalender Interaktif sesuai Mode */}
