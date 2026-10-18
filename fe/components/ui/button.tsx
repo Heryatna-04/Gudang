@@ -20,8 +20,8 @@ export function Button({
   };
 
   const variantStyles = {
-    primary: 'bg-emerald-800 hover:bg-emerald-900 text-white shadow-xs',
-    secondary: 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700',
+    primary: 'bg-emerald-800 hover:bg-emerald-900 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-xs',
+    secondary: 'bg-slate-100 hover:bg-slate-200 dark:bg-[#101c36] dark:hover:bg-[#152342] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-blue-900/40',
     amber: 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-xs',
     danger: 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs',
     ghost: 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300',

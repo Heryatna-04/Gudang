@@ -235,26 +235,25 @@ export function AttendanceManagement({
   return (
     <div className="space-y-6 font-sans">
       {/* Header UX Friendly */}
-      <div className={`flex flex-col gap-3 rounded-2xl border p-5 shadow-sm md:flex-row md:items-center md:justify-between transition-colors ${
+      <div className={`rounded-2xl border p-5 shadow-sm transition-colors space-y-4 ${
         isDark ? 'border-zinc-800 bg-black text-zinc-100' : 'border-slate-200 bg-white text-slate-900'
       }`}>
-        <div>
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
-            <h2 className={`text-base font-extrabold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
-              {isOwner ? 'ABSENSI & KASBON KARYAWAN' : 'ABSENSI CEPAT KARYAWAN'} ({warehouseName})
-            </h2>
+        {/* Baris 1: Judul Halaman & Shift Selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
+              <h2 className={`text-base font-extrabold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
+                {isOwner ? 'ABSENSI & KASBON KARYAWAN' : 'ABSENSI CEPAT KARYAWAN'} ({warehouseName})
+              </h2>
+            </div>
+            <p className={`mt-0.5 text-xs font-medium ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              {isOwner
+                ? 'Monitoring absensi pekerja shift pagi & malam, kasbon harian, dan penggajian dinamis.'
+                : 'Pencatatan absensi cepat pekerja gudang (Shift Pagi & Shift Malam).'}
+            </p>
           </div>
-          <p className={`mt-1 text-xs font-medium ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-            {isOwner
-              ? 'Monitoring absensi pekerja shift pagi & malam, kasbon harian, dan penggajian dinamis.'
-              : 'Pencatatan absensi cepat pekerja gudang (Shift Pagi & Shift Malam).'}
-          </p>
-        </div>
 
-        {/* Quick Stats & Shift Selector & 1-Click Hadir Semua */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Shift Selector Eduplex Choice Group */}
           <ChoiceGroup<WorkShift>
             options={[
               { value: 'PAGI', label: 'Shift Pagi' },
@@ -265,69 +264,63 @@ export function AttendanceManagement({
             size="sm"
             isDark={isDark}
           />
+        </div>
 
-          <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${
-            isDark ? 'border-zinc-800 bg-black text-zinc-200' : 'border-slate-200 bg-slate-50 text-slate-700'
-          }`}>
-            Hadir ({selectedShift}): <span className="font-numeric text-emerald-800 dark:text-emerald-400 font-black">{presentCount}</span> / {warehouseEmployees.length}
+        {/* Baris 2: Summary Status & Aksi Massal */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${
+              isDark ? 'border-zinc-800 bg-zinc-950 text-zinc-200' : 'border-slate-200 bg-slate-50 text-slate-700'
+            }`}>
+              Hadir ({selectedShift}): <span className="font-numeric text-emerald-800 dark:text-emerald-400 font-black">{presentCount}</span> / {warehouseEmployees.length}
+            </div>
+
+            <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${
+              isDark ? 'border-zinc-800 bg-zinc-950 text-zinc-200' : 'border-slate-200 bg-slate-50 text-slate-700'
+            }`}>
+              Libur ({selectedShift}): <span className="font-numeric text-sky-700 dark:text-sky-400 font-black">{offCount}</span> / {warehouseEmployees.length}
+            </div>
           </div>
 
-          <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${
-            isDark ? 'border-zinc-800 bg-black text-zinc-200' : 'border-slate-200 bg-slate-50 text-slate-700'
-          }`}>
-            Libur ({selectedShift}): <span className="font-numeric text-sky-700 dark:text-sky-400 font-black">{offCount}</span> / {warehouseEmployees.length}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => onBulkUpdateAll('PRESENT', selectedShift)}
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-800 px-3 py-1.5 text-xs font-extrabold text-white shadow-xs hover:bg-emerald-900 transition-all cursor-pointer"
+            >
+              <CheckCheck className="h-4 w-4" />
+              Tandai Hadir Semua ({selectedShift})
+            </button>
+
+            <button
+              onClick={() => onBulkUpdateAll('OFF', selectedShift)}
+              className="flex items-center gap-1.5 rounded-xl bg-sky-700 px-3 py-1.5 text-xs font-extrabold text-white shadow-xs hover:bg-sky-800 transition-all cursor-pointer"
+            >
+              <Coffee className="h-4 w-4" />
+              Tandai Libur Semua ({selectedShift})
+            </button>
           </div>
-
-          <button
-            onClick={() => onBulkUpdateAll('PRESENT', selectedShift)}
-            className="flex items-center gap-1.5 rounded-xl bg-emerald-800 px-3 py-1.5 text-xs font-extrabold text-white shadow-xs hover:bg-emerald-900 transition-all cursor-pointer"
-          >
-            <CheckCheck className="h-4 w-4" />
-            Tandai Hadir Semua ({selectedShift})
-          </button>
-
-          <button
-            onClick={() => onBulkUpdateAll('OFF', selectedShift)}
-            className="flex items-center gap-1.5 rounded-xl bg-sky-700 px-3 py-1.5 text-xs font-extrabold text-white shadow-xs hover:bg-sky-800 transition-all cursor-pointer"
-          >
-            <Coffee className="h-4 w-4" />
-            Tandai Libur Semua ({selectedShift})
-          </button>
         </div>
       </div>
 
       {/* Mode Switcher: Input Absensi Harian vs Rekap Bulanan */}
-      <div className={`flex items-center gap-2 border-b pb-3 transition-colors ${
-        isDark ? 'border-zinc-800' : 'border-slate-200'
-      }`}>
-        <button
-          type="button"
-          onClick={() => setActiveTabMode('daily')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
-            activeTabMode === 'daily'
-              ? 'bg-emerald-800 text-white shadow-xs'
-              : isDark
-              ? 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-        >
-          <CalendarCheck className="h-4 w-4" />
-          <span>Input Absensi Harian (Checklist)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTabMode('monthly_recap')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
-            activeTabMode === 'monthly_recap'
-              ? 'bg-emerald-800 text-white shadow-xs'
-              : isDark
-              ? 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-        >
-          <Award className="h-4 w-4" />
-          <span>Rekapan Bulanan & Analisis Kerajinan</span>
-        </button>
+      <div className="w-full sm:w-auto">
+        <ChoiceGroup
+          size="md"
+          value={activeTabMode}
+          onChange={(val) => setActiveTabMode(val as 'daily' | 'monthly_recap')}
+          options={[
+            {
+              value: 'daily',
+              label: 'Input Absensi Harian (Checklist)',
+              icon: <CalendarCheck className="h-4 w-4" />,
+            },
+            {
+              value: 'monthly_recap',
+              label: 'Rekapan Bulanan & Analisis Kerajinan',
+              icon: <Award className="h-4 w-4" />,
+            },
+          ]}
+        />
       </div>
 
       {activeTabMode === 'daily' && (
@@ -357,7 +350,7 @@ export function AttendanceManagement({
             </div>
 
             {/* List Absensi Cepat */}
-            <div className={`divide-y max-h-[500px] overflow-y-auto pr-1 ${isDark ? 'divide-zinc-800/80' : 'divide-slate-100'}`}>
+            <div className={`divide-y ${isDark ? 'divide-zinc-800/80' : 'divide-slate-100'}`}>
               {filteredEmployees.map((emp) => {
                 const att = attendances.find((a) => a.employeeId === emp.id && (a.shift === selectedShift || (!a.shift && selectedShift === 'PAGI')));
                 const currentStatus = att?.status || 'ABSENT';

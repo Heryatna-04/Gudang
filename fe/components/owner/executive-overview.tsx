@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   TrendingUp,
   Scale,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Product, ScaleTransaction, FactorySale, UserRole } from '../../types';
 import { InteractiveCalendar } from '../ui/interactive-calendar';
+import { Button } from '../ui/button';
 
 interface ExecutiveDashboardOverviewProps {
   activeRole: UserRole;
@@ -27,6 +28,7 @@ interface ExecutiveDashboardOverviewProps {
   transactions: ScaleTransaction[];
   factorySales: FactorySale[];
   isDark?: boolean;
+  isOnline?: boolean;
   onNavigateTab: (tab: string) => void;
 }
 
@@ -37,8 +39,64 @@ export function ExecutiveDashboardOverview({
   transactions,
   factorySales,
   isDark = false,
+  isOnline = true,
   onNavigateTab,
 }: ExecutiveDashboardOverviewProps) {
+  // Satu sumber kebenaran: tanggal terpilih (dipakai kalender, chart, dan daftar nota)
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date>(() => new Date());
+
+  // Kunci tanggal LOKAL (WIB), bukan UTC, agar nota malam hari tidak mundur sehari
+  const localKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const txKg = (tx: ScaleTransaction) =>
+    (tx.items || []).reduce((s, i) => s + (i.netWeightKg || 0), 0);
+
+  // Senin-Minggu pada minggu tanggal terpilih, tonase dari transaksi nyata (hari kosong = 0)
+  const { weeklyChartData, lastWeekTon } = useMemo(() => {
+    const names = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    const fulls = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const monday = new Date(selectedCalendarDate);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+
+    const kgByDay = new Map<string, number>();
+    for (const tx of transactions) {
+      if (!tx.createdAt) continue;
+      const k = localKey(new Date(tx.createdAt));
+      kgByDay.set(k, (kgByDay.get(k) || 0) + txKg(tx));
+    }
+
+    const days = names.map((name, i) => {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      return {
+        name,
+        full: fulls[i],
+        date,
+        ton: Number(((kgByDay.get(localKey(date)) || 0) / 1000).toFixed(2)),
+      };
+    });
+
+    let prev = 0;
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() - i);
+      prev += (kgByDay.get(localKey(d)) || 0) / 1000;
+    }
+    return { weeklyChartData: days, lastWeekTon: prev };
+  }, [transactions, selectedCalendarDate]);
+
+  const selectedDayIndex = (selectedCalendarDate.getDay() + 6) % 7;
+  const maxTon = Math.max(...weeklyChartData.map((d) => d.ton), 0.01);
+  const thisWeekTon = weeklyChartData.reduce((s, d) => s + d.ton, 0);
+  const weekDeltaPct =
+    lastWeekTon > 0 ? Math.round(((thisWeekTon - lastWeekTon) / lastWeekTon) * 100) : null;
+
+  // Nota pada tanggal terpilih saja; tidak ada fallback ke tanggal lain
+  const filteredTransactionsByCalendar = useMemo(() => {
+    const key = localKey(selectedCalendarDate);
+    return transactions.filter((tx) => tx.createdAt && localKey(new Date(tx.createdAt)) === key);
+  }, [selectedCalendarDate, transactions]);
+
   // Volume pembelian tonase mingguan dummy / live
   const totalWeightToday = useMemo(() => {
     return transactions.reduce((acc, t) => {
@@ -180,17 +238,21 @@ export function ExecutiveDashboardOverview({
         {/* GRID TENGAH: CHART TONASE + STATUS 4 GUDANG */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
-          {/* Chart Tonase Mingguan (Tailwind Bar Chart Sesuai Slice) */}
+          {/* Chart Tonase Mingguan (Interactive Bar Chart) */}
           <div className={`p-5 rounded-2xl border transition-colors ${
-            isDark ? 'bg-[#0b1220] border-slate-800/80' : 'bg-white border-slate-200/80 shadow-xs'
+            isDark ? 'bg-[#121215] border-[#27272a]' : 'bg-white border-slate-200/80 shadow-xs'
           }`}>
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className={`font-black text-xs uppercase tracking-wider ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   Volume Timbangan (Ton)
                 </h3>
-                <span className="text-[11px] font-bold text-emerald-500 flex items-center gap-1 mt-0.5">
-                  <TrendingUp className="w-3.5 h-3.5" /> +12% minggu ini
+                <span className={`text-[11px] font-bold flex items-center gap-1 mt-0.5 ${
+                  weekDeltaPct !== null && weekDeltaPct < 0 ? 'text-rose-500' : 'text-emerald-500'
+                }`}>
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  {thisWeekTon.toFixed(1)} Ton minggu ini
+                  {weekDeltaPct !== null && ` (${weekDeltaPct > 0 ? '+' : ''}${weekDeltaPct}% vs minggu lalu)`}
                 </span>
               </div>
               <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border ${
@@ -200,40 +262,58 @@ export function ExecutiveDashboardOverview({
               </span>
             </div>
 
-            <div className="h-40 flex items-end justify-between pt-6 px-3 relative">
-              <div className={`absolute top-1 left-[58%] -translate-x-1/2 text-white text-[10px] px-2.5 py-1 rounded-lg font-bold shadow-xs ${
-                isDark ? 'bg-[#0f172a] border border-slate-700' : 'bg-emerald-950'
-              }`}>
-                14.2 Ton &bull; Kamis
+            <div className="h-44 flex items-end justify-between pt-8 px-2 relative">
+              {/* Tooltip Dinamis Sesuai Batang yang Diklik / Aktif */}
+              <div
+                className={`absolute top-1 text-white text-[10px] px-2.5 py-1 rounded-lg font-bold shadow-xs transition-all duration-300 pointer-events-none ${
+                  isDark ? 'bg-blue-600 border border-blue-500/40' : 'bg-emerald-950'
+                }`}
+                style={{
+                  left: `${((selectedDayIndex + 0.5) / weeklyChartData.length) * 100}%`,
+                  transform: 'translateX(-50%)',
+                }}
+              >
+                {weeklyChartData[selectedDayIndex].ton} Ton &bull; {weeklyChartData[selectedDayIndex].full}
               </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-3.5 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} style={{ height: '55px' }}></div>
-                <span className="text-[10px] text-slate-400 font-bold">Sen</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-3.5 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} style={{ height: '80px' }}></div>
-                <span className="text-[10px] text-slate-400 font-bold">Sel</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-3.5 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} style={{ height: '45px' }}></div>
-                <span className="text-[10px] text-slate-400 font-bold">Rab</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-3.5 bg-emerald-600 rounded-full ring-4 ring-emerald-500/20" style={{ height: '115px' }}></div>
-                <span className={`text-[10px] font-black ${isDark ? 'text-emerald-400' : 'text-emerald-900'}`}>Kam</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-3.5 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} style={{ height: '90px' }}></div>
-                <span className="text-[10px] text-slate-400 font-bold">Jum</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-3.5 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} style={{ height: '65px' }}></div>
-                <span className="text-[10px] text-slate-400 font-bold">Sab</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-3.5 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} style={{ height: '30px' }}></div>
-                <span className="text-[10px] text-slate-400 font-bold">Min</span>
-              </div>
+
+              {weeklyChartData.map((d, idx) => {
+                const isSelected = idx === selectedDayIndex;
+                const heightPct = d.ton > 0 ? Math.max(12, Math.round((d.ton / maxTon) * 100)) : 4;
+
+                return (
+                  <button
+                    key={d.name}
+                    type="button"
+                    onClick={() => setSelectedCalendarDate(d.date)}
+                    title={`Klik untuk melihat detail ${d.full}: ${d.ton} Ton`}
+                    className="flex flex-col items-center gap-2 group cursor-pointer focus:outline-none"
+                  >
+                    <div
+                      className={`w-4 sm:w-5 rounded-full transition-all duration-300 ${
+                        isSelected
+                          ? isDark
+                            ? 'bg-blue-600 ring-4 ring-blue-500/25 scale-105'
+                            : 'bg-emerald-600 ring-4 ring-emerald-500/20 scale-105'
+                          : isDark
+                          ? 'bg-zinc-800 hover:bg-zinc-700'
+                          : 'bg-slate-200 hover:bg-slate-300'
+                      }`}
+                      style={{ height: `${heightPct}px` }}
+                    />
+                    <span
+                      className={`text-[10px] transition-colors ${
+                        isSelected
+                          ? isDark
+                            ? 'font-black text-sky-400'
+                            : 'font-black text-emerald-900'
+                          : 'text-slate-400 font-bold group-hover:text-slate-200'
+                      }`}
+                    >
+                      {d.name}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -253,11 +333,17 @@ export function ExecutiveDashboardOverview({
             </div>
 
             <div className="space-y-2.5 text-xs">
-              <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
-                isDark ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-50 border-slate-100'
-              }`}>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('shifts')}
+                className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left cursor-pointer transition-colors ${
+                  isDark ? 'bg-[#101c36] hover:bg-[#152342] border-blue-900/30' : 'bg-slate-50 hover:bg-slate-100 border-slate-100'
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 font-black text-xs flex items-center justify-center">
+                  <span className={`w-8 h-8 rounded-lg font-black text-xs flex items-center justify-center ${
+                    isDark ? 'bg-sky-500/15 text-sky-300' : 'bg-emerald-500/10 text-emerald-500'
+                  }`}>
                     G1
                   </span>
                   <div>
@@ -270,11 +356,15 @@ export function ExecutiveDashboardOverview({
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
-              </div>
+              </button>
 
-              <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
-                isDark ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-50 border-slate-100'
-              }`}>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('shifts')}
+                className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left cursor-pointer transition-colors ${
+                  isDark ? 'bg-[#101c36] hover:bg-[#152342] border-blue-900/30' : 'bg-slate-50 hover:bg-slate-100 border-slate-100'
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <span className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 font-black text-xs flex items-center justify-center">
                     G2
@@ -289,11 +379,15 @@ export function ExecutiveDashboardOverview({
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
-              </div>
+              </button>
 
-              <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
-                isDark ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-50 border-slate-100'
-              }`}>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('shifts')}
+                className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left cursor-pointer transition-colors ${
+                  isDark ? 'bg-[#101c36] hover:bg-[#152342] border-blue-900/30' : 'bg-slate-50 hover:bg-slate-100 border-slate-100'
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <span className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 font-black text-xs flex items-center justify-center">
                     G3
@@ -308,7 +402,7 @@ export function ExecutiveDashboardOverview({
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
-              </div>
+              </button>
             </div>
           </div>
 
@@ -337,22 +431,24 @@ export function ExecutiveDashboardOverview({
           </div>
 
           <div className="space-y-2 text-xs">
-            {recentTransactions.length === 0 ? (
+            {filteredTransactionsByCalendar.length === 0 ? (
               <div className={`p-6 text-center rounded-xl border border-dashed ${
-                isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'
+                isDark ? 'border-zinc-800 text-zinc-500' : 'border-slate-200 text-slate-400'
               }`}>
-                Belum ada transaksi timbangan hari ini. Klik &quot;Nota Baru&quot; untuk mulai menimbang.
+                Belum ada transaksi timbangan pada tanggal {selectedCalendarDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}. Klik &quot;Nota Baru&quot; untuk mulai menimbang.
               </div>
             ) : (
-              recentTransactions.map((tx) => (
+              filteredTransactionsByCalendar.map((tx) => (
                 <div
                   key={tx.id}
                   className={`flex items-center justify-between p-3 rounded-xl border transition ${
-                    isDark ? 'bg-[#0f172a] border-slate-800/80' : 'bg-slate-50/70 border-slate-100'
+                    isDark ? 'bg-[#18181b] border-zinc-800' : 'bg-slate-50/70 border-slate-100'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                      isDark ? 'bg-blue-500/15 text-sky-400' : 'bg-emerald-500/10 text-emerald-500'
+                    }`}>
                       <Receipt className="w-4 h-4" />
                     </div>
                     <div>
@@ -365,10 +461,12 @@ export function ExecutiveDashboardOverview({
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-numeric font-black ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>
+                    <p className={`font-numeric font-black ${isDark ? 'text-sky-300' : 'text-emerald-800'}`}>
                       Rp{tx.totalAmount.toLocaleString('id-ID')}
                     </p>
-                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
+                      isDark ? 'text-sky-300 bg-blue-500/20' : 'text-emerald-500 bg-emerald-500/10'
+                    }`}>
                       Selesai &bull; Tunai
                     </span>
                   </div>
@@ -390,11 +488,15 @@ export function ExecutiveDashboardOverview({
           <div className="relative z-10 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`}></span>
                 Cloud Realtime Sync
               </span>
-              <span className="text-[9px] font-bold text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-600/30">
-                Online
+              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                isOnline
+                  ? 'text-emerald-300 bg-emerald-950/80 border-emerald-600/30'
+                  : 'text-rose-300 bg-rose-950/80 border-rose-600/30'
+              }`}>
+                {isOnline ? 'Online' : 'Offline'}
               </span>
             </div>
             <h3 className="text-base font-black leading-snug">
@@ -403,19 +505,25 @@ export function ExecutiveDashboardOverview({
             <p className="text-xs text-emerald-200/80 leading-relaxed font-normal">
               Sistem offline-first Dexie aktif. Seluruh nota aman tersimpan di IndexedDB browser.
             </p>
-            <button
+            <Button
               type="button"
-              onClick={() => onNavigateTab('owner')}
-              className="w-full mt-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs py-2.5 rounded-xl shadow-xs transition cursor-pointer"
+              variant="amber"
+              size="sm"
+              onClick={() => onNavigateTab(activeRole === 'OWNER' ? 'owner' : 'pos')}
+              className="w-full mt-2 font-black py-2.5 text-xs"
             >
-              Buka Laporan Finansial Owner
-            </button>
+              {activeRole === 'OWNER' ? 'Buka Laporan Finansial Owner' : 'Buka Kasir Timbangan'}
+            </Button>
           </div>
           <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-emerald-600/10 rounded-full blur-2xl pointer-events-none"></div>
         </div>
 
         {/* Mini Kalender Interaktif */}
-        <InteractiveCalendar isDark={isDark} />
+        <InteractiveCalendar
+          isDark={isDark}
+          value={selectedCalendarDate}
+          onSelectDate={setSelectedCalendarDate}
+        />
 
         {/* Jadwal Kirim Pabrik Peleburan */}
         <div className={`p-5 rounded-2xl border transition-colors ${
@@ -431,9 +539,13 @@ export function ExecutiveDashboardOverview({
           </div>
 
           <div className="space-y-2.5 text-xs">
-            <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
-              isDark ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-50 border-slate-100'
-            }`}>
+            <button
+              type="button"
+              onClick={() => onNavigateTab('sales')}
+              className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left cursor-pointer transition-colors ${
+                isDark ? 'bg-[#101c36] hover:bg-[#152342] border-blue-900/30' : 'bg-slate-50 hover:bg-slate-100 border-slate-100'
+              }`}
+            >
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
                   <Truck className="w-4 h-4" />
@@ -450,13 +562,19 @@ export function ExecutiveDashboardOverview({
               <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
                 Muat
               </span>
-            </div>
+            </button>
 
-            <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
-              isDark ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-50 border-slate-100'
-            }`}>
+            <button
+              type="button"
+              onClick={() => onNavigateTab('sales')}
+              className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left cursor-pointer transition-colors ${
+                isDark ? 'bg-[#101c36] hover:bg-[#152342] border-blue-900/30' : 'bg-slate-50 hover:bg-slate-100 border-slate-100'
+              }`}
+            >
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  isDark ? 'bg-sky-500/15 text-sky-400' : 'bg-emerald-500/10 text-emerald-500'
+                }`}>
                   <Truck className="w-4 h-4" />
                 </div>
                 <div>
@@ -468,10 +586,12 @@ export function ExecutiveDashboardOverview({
                   </p>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                isDark ? 'text-sky-300 bg-blue-500/20' : 'text-emerald-500 bg-emerald-500/10'
+              }`}>
                 Terkirim
               </span>
-            </div>
+            </button>
           </div>
         </div>
 

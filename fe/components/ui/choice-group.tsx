@@ -16,6 +16,7 @@ interface ChoiceGroupProps<T extends string | number> {
   className?: string;
   size?: 'sm' | 'md';
   isDark?: boolean;
+  fullWidth?: boolean;
 }
 
 export function ChoiceGroup<T extends string | number>({
@@ -25,10 +26,13 @@ export function ChoiceGroup<T extends string | number>({
   className = '',
   size = 'md',
   isDark = false,
+  fullWidth = false,
 }: ChoiceGroupProps<T>) {
   return (
     <div
-      className={`inline-flex items-center p-1 rounded-2xl border transition-colors ${
+      className={`p-1 rounded-2xl border transition-colors ${
+        fullWidth ? 'flex w-full' : 'inline-flex'
+      } items-center ${
         isDark
           ? 'bg-[#0f172a] border-slate-800'
           : 'bg-[#EDF2E8] border-emerald-950/5'
@@ -42,12 +46,16 @@ export function ChoiceGroup<T extends string | number>({
             type="button"
             onClick={() => onChange(option.value)}
             className={`relative flex items-center justify-center gap-2 rounded-xl font-extrabold transition-all cursor-pointer select-none ${
-              size === 'sm' ? 'px-3 py-1.5 text-[11px]' : 'px-4 py-2 text-xs'
+              fullWidth ? 'flex-1' : ''
+            } ${
+              size === 'sm' ? 'px-3 py-1.5 text-[11px]' : 'px-4 py-2.5 text-xs'
             } ${
               isSelected
-                ? 'bg-emerald-800 text-white shadow-md shadow-emerald-950/20 scale-[1.02]'
+                ? isDark
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-950/40'
+                  : 'bg-emerald-800 text-white shadow-md shadow-emerald-950/20'
                 : isDark
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >

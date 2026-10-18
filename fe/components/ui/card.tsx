@@ -3,16 +3,19 @@ import React from 'react';
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   className?: string;
+  as?: React.ElementType;
+  onSubmit?: (e: React.FormEvent<HTMLElement>) => void;
 }
 
-export function Card({ children, className = '', ...props }: CardProps) {
+export function Card({ children, className = '', as, ...props }: CardProps) {
+  const Component = (as || 'div') as React.ElementType;
   return (
-    <div
+    <Component
       className={`rounded-2xl border p-5 shadow-xs transition-colors duration-200 border-slate-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0b1220] ${className}`}
       {...props}
     >
       {children}
-    </div>
+    </Component>
   );
 }
 

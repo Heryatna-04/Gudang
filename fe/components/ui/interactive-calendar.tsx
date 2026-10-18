@@ -5,12 +5,16 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface InteractiveCalendarProps {
   isDark?: boolean;
+  /** Tanggal terpilih dari luar (controlled). Jika kosong, kalender menyimpan sendiri. */
+  value?: Date;
   onSelectDate?: (date: Date) => void;
 }
 
-export function InteractiveCalendar({ isDark = false, onSelectDate }: InteractiveCalendarProps) {
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 9, 18)); // Default 18 Okt 2026
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(2026, 9, 18));
+export function InteractiveCalendar({ isDark = false, value, onSelectDate }: InteractiveCalendarProps) {
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
+  const [internalSelected, setInternalSelected] = useState<Date>(() => new Date());
+  const selectedDate = value ?? internalSelected;
+  const setSelectedDate = setInternalSelected;
 
   const monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -100,7 +104,9 @@ export function InteractiveCalendar({ isDark = false, onSelectDate }: Interactiv
               onClick={() => handleDayClick(cDay)}
               className={`p-1.5 rounded-full transition cursor-pointer text-xs font-bold ${
                 isSelected
-                  ? 'bg-emerald-800 text-white font-black shadow-xs ring-2 ring-emerald-500/30'
+                  ? isDark
+                    ? 'bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-500/30'
+                    : 'bg-emerald-800 text-white font-black shadow-xs ring-2 ring-emerald-500/30'
                   : isDark
                   ? 'text-slate-300 hover:bg-slate-800'
                   : 'text-slate-700 hover:bg-slate-100'
@@ -115,7 +121,7 @@ export function InteractiveCalendar({ isDark = false, onSelectDate }: Interactiv
       {/* Date Feedback Bar */}
       <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
         <span className="text-slate-400">Pilihan:</span>
-        <span className="font-extrabold text-emerald-800 dark:text-emerald-400">
+        <span className="font-extrabold text-emerald-800 dark:text-sky-300">
           {selectedDate.getDate()} {monthNames[selectedDate.getMonth()].slice(0, 3)} {selectedDate.getFullYear()}
         </span>
       </div>

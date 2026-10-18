@@ -22,125 +22,179 @@
 }
 
 .dark {
-  /* Dark Mode: Deep Navy / Charcoal Black */
-  --background: #050811; 
-  --foreground: #f1f5f9;
-  --surface: #0b1220;
-  --surface-border: #1e293b;
+  /* Dark Mode: Pure Charcoal/Black Background & Surfaces with Royal Blue Accents */
+  --background: #09090b; 
+  --foreground: #f4f4f5;
+  --surface: #121215;
+  --surface-border: #27272a;
   
-  --forest-green: #10b981;
-  --forest-green-light: #064e3b;
-  --forest-green-border: #047857;
+  --forest-green: #38bdf8;
+  --forest-green-light: #18181b;
+  --forest-green-border: #2563eb;
 
   --gold-ochre: #f59e0b;
-  --gold-ochre-light: #451a03;
+  --gold-ochre-light: #27272a;
   --gold-ochre-border: #b45309;
 
-  --deep-navy: #38bdf8;
-  --deep-navy-light: #0f172a;
-  --deep-navy-border: #1e293b;
+  --deep-navy: #60a5fa;
+  --deep-navy-light: #18181b;
+  --deep-navy-border: #27272a;
   color-scheme: dark;
 }
 
 html.dark, html.dark body {
-  background-color: #050811;
-  color: #f1f5f9;
+  background-color: #09090b;
+  color: #f4f4f5;
 }
 
 /* ==========================================================================
-   GLOBAL DARK MODE - DEEP NAVY & CHARCOAL SURFACES (#0b1220 & #0f172a)
+   GLOBAL DARK MODE - CONTENT USES CHARCOAL BLACK (#121215 & #18181b)
+   SIDEBAR REMAINS ROYAL BLUE
    ========================================================================== */
 
-/* 1. Main cards & rounded containers */
-html.dark [class*="rounded-2xl"]:not(button):not(a),
-.dark [class*="rounded-2xl"]:not(button):not(a),
-html.dark [class*="rounded-3xl"]:not(button):not(a),
-.dark [class*="rounded-3xl"]:not(button):not(a),
-html.dark .bg-white:not(button):not(a),
-.dark .bg-white:not(button):not(a) {
-  background-color: #0b1220 !important;
-  color: #f1f5f9;
+/* 1. Main cards & rounded containers in content */
+html.dark [class*="rounded-2xl"]:not(aside):not(aside *):not(button):not(a),
+.dark [class*="rounded-2xl"]:not(aside):not(aside *):not(button):not(a),
+html.dark [class*="rounded-3xl"]:not(aside):not(aside *):not(button):not(a),
+.dark [class*="rounded-3xl"]:not(aside):not(aside *):not(button):not(a),
+html.dark .bg-white:not(aside):not(aside *):not(button):not(a),
+.dark .bg-white:not(aside):not(aside *):not(button):not(a) {
+  background-color: #121215 !important;
+  color: #f4f4f5;
 }
 
-/* 2. Inner cards, lists, sub-containers */
-html.dark .bg-slate-50,
-.dark .bg-slate-50,
-html.dark .bg-slate-100,
-.dark .bg-slate-100,
-html.dark .bg-slate-200\/60,
-.dark .bg-slate-200\/60,
-html.dark .bg-emerald-50,
-.dark .bg-emerald-50,
-html.dark [class*="bg-emerald-50"],
-.dark [class*="bg-emerald-50"],
-html.dark .bg-amber-50,
-.dark .bg-amber-50,
-html.dark [class*="bg-amber-50"],
-.dark [class*="bg-amber-50"],
-html.dark .bg-indigo-50,
-.dark .bg-indigo-50,
-html.dark [class*="bg-indigo-50"],
-.dark [class*="bg-indigo-50"],
-html.dark .bg-blue-50,
-.dark .bg-blue-50,
-html.dark .bg-red-50,
-.dark .bg-red-50,
-html.dark .bg-rose-50,
-.dark .bg-rose-50 {
-  background-color: #0f172a !important;
+/* 2. Inner cards, lists, sub-containers in content */
+html.dark .bg-slate-50:not(aside):not(aside *),
+.dark .bg-slate-50:not(aside):not(aside *),
+html.dark .bg-slate-100:not(aside):not(aside *),
+.dark .bg-slate-100:not(aside):not(aside *),
+html.dark .bg-slate-200\/60:not(aside):not(aside *),
+.dark .bg-slate-200\/60:not(aside):not(aside *),
+html.dark .bg-emerald-50:not(aside):not(aside *),
+.dark .bg-emerald-50:not(aside):not(aside *),
+html.dark [class*="bg-emerald-50"]:not(aside):not(aside *),
+.dark [class*="bg-emerald-50"]:not(aside):not(aside *),
+html.dark .bg-amber-50:not(aside):not(aside *),
+.dark .bg-amber-50:not(aside):not(aside *),
+html.dark [class*="bg-amber-50"]:not(aside):not(aside *),
+.dark [class*="bg-amber-50"]:not(aside):not(aside *),
+html.dark .bg-indigo-50:not(aside):not(aside *),
+.dark .bg-indigo-50:not(aside):not(aside *),
+html.dark [class*="bg-indigo-50"]:not(aside):not(aside *),
+.dark [class*="bg-indigo-50"]:not(aside):not(aside *),
+html.dark .bg-blue-50:not(aside):not(aside *),
+.dark .bg-blue-50:not(aside):not(aside *),
+html.dark .bg-red-50:not(aside):not(aside *),
+.dark .bg-red-50:not(aside):not(aside *),
+html.dark .bg-rose-50:not(aside):not(aside *),
+.dark .bg-rose-50:not(aside):not(aside *) {
+  background-color: #18181b !important;
 }
 
-/* 3. Strip background gradients in dark mode */
-html.dark .bg-gradient-to-b,
-.dark .bg-gradient-to-b,
-html.dark .bg-gradient-to-r,
-.dark .bg-gradient-to-r,
-html.dark .bg-gradient-to-br,
-.dark .bg-gradient-to-br,
-html.dark .bg-gradient-to-t,
-.dark .bg-gradient-to-t {
+/* 3. Strip background gradients in dark mode content */
+html.dark .bg-gradient-to-b:not(aside):not(aside *),
+.dark .bg-gradient-to-b:not(aside):not(aside *),
+html.dark .bg-gradient-to-r:not(aside):not(aside *),
+.dark .bg-gradient-to-r:not(aside):not(aside *),
+html.dark .bg-gradient-to-br:not(aside):not(aside *),
+.dark .bg-gradient-to-br:not(aside):not(aside *),
+html.dark .bg-gradient-to-t:not(aside):not(aside *),
+.dark .bg-gradient-to-t:not(aside):not(aside *) {
   background-image: none !important;
-  background-color: #0b1220 !important;
+  background-color: #121215 !important;
 }
 
 /* 4. Borders in Dark Mode */
-html.dark .border-slate-100,
-.dark .border-slate-100,
-html.dark .border-slate-200,
-.dark .border-slate-200,
-html.dark .border-slate-300,
-.dark .border-slate-300,
-html.dark .border-slate-400,
-.dark .border-slate-400,
-html.dark .border-amber-200,
-.dark .border-amber-200,
-html.dark .border-amber-300,
-.dark .border-amber-300,
-html.dark .border-emerald-200,
-.dark .border-emerald-200,
-html.dark .border-emerald-300,
-.dark .border-emerald-300 {
-  border-color: #1e293b !important;
+html.dark .border-slate-100:not(aside):not(aside *),
+.dark .border-slate-100:not(aside):not(aside *),
+html.dark .border-slate-200:not(aside):not(aside *),
+.dark .border-slate-200:not(aside):not(aside *),
+html.dark .border-slate-300:not(aside):not(aside *),
+.dark .border-slate-300:not(aside):not(aside *),
+html.dark .border-slate-400:not(aside):not(aside *),
+.dark .border-slate-400:not(aside):not(aside *),
+html.dark .border-slate-800:not(aside):not(aside *),
+.dark .border-slate-800:not(aside):not(aside *),
+html.dark .border-amber-200:not(aside):not(aside *),
+.dark .border-amber-200:not(aside):not(aside *),
+html.dark .border-amber-300:not(aside):not(aside *),
+.dark .border-amber-300:not(aside):not(aside *),
+html.dark .border-emerald-200:not(aside):not(aside *),
+.dark .border-emerald-200:not(aside):not(aside *),
+html.dark .border-emerald-300:not(aside):not(aside *),
+.dark .border-emerald-300:not(aside):not(aside *) {
+  border-color: #27272a !important;
 }
 
 html.dark .divide-slate-100 > * + *,
 .dark .divide-slate-100 > * + *,
 html.dark .divide-slate-200 > * + *,
 .dark .divide-slate-200 > * + * {
-  border-color: #1e293b !important;
+  border-color: #27272a !important;
 }
 
 /* 5. Ghost / Secondary buttons */
-html.dark button.bg-white,
-.dark button.bg-white,
-html.dark a.bg-white,
-.dark a.bg-white {
-  background-color: #0f172a !important;
-  border-color: #1e293b !important;
-  color: #f1f5f9 !important;
+html.dark button.bg-white:not(aside):not(aside *),
+.dark button.bg-white:not(aside):not(aside *),
+html.dark a.bg-white:not(aside):not(aside *),
+.dark a.bg-white:not(aside):not(aside *) {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
 }
 
-/* 6. Typography */
+/* 6. Dark mode Royal Blue & Sky accents override for buttons and badges */
+html.dark button.bg-emerald-800,
+.dark button.bg-emerald-800,
+html.dark button.bg-emerald-700,
+.dark button.bg-emerald-700,
+html.dark button.bg-emerald-900,
+.dark button.bg-emerald-900 {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+html.dark button.bg-emerald-800:hover,
+.dark button.bg-emerald-800:hover,
+html.dark button.bg-emerald-700:hover,
+.dark button.bg-emerald-700:hover,
+html.dark button.bg-emerald-900:hover,
+.dark button.bg-emerald-900:hover {
+  background-color: #2563eb !important;
+}
+
+html.dark .text-emerald-800,
+.dark .text-emerald-800,
+html.dark .text-emerald-700,
+.dark .text-emerald-700,
+html.dark .text-emerald-600,
+.dark .text-emerald-600,
+html.dark .text-emerald-500,
+.dark .text-emerald-500,
+html.dark .text-emerald-400,
+.dark .text-emerald-400 {
+  color: #38bdf8 !important;
+}
+
+html.dark .border-emerald-500\/20,
+.dark .border-emerald-500\/20,
+html.dark .border-emerald-800,
+.dark .border-emerald-800,
+html.dark .border-emerald-700,
+.dark .border-emerald-700 {
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+html.dark .bg-emerald-500\/10,
+.dark .bg-emerald-500\/10,
+html.dark .bg-emerald-950,
+.dark .bg-emerald-950,
+html.dark [class*="bg-emerald-950"],
+.dark [class*="bg-emerald-950"] {
+  background-color: rgba(30, 58, 138, 0.4) !important;
+}
+
+/* 7. Typography */
 .font-numeric {
   font-feature-settings: "tnum" 1, "zero" 1;
 }
@@ -153,3 +207,49 @@ html.dark a.bg-white,
 .animate-pulse-glow {
   animation: pulseGlow 2s infinite ease-in-out;
 }
+
+/* Prevent layout shift / glitch between pages with and without scrollbar */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* ==========================================================================
+   CUSTOM SLEEK SCROLLBAR (LIGHT & DARK MODE)
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.6);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(51, 65, 85, 0.6) transparent;
+}
+

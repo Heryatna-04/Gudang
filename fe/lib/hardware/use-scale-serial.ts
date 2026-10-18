@@ -41,7 +41,9 @@ export function useScaleSerial(options: UseScaleSerialOptions = {}) {
     isMock: mockMode,
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const portRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const readerRef = useRef<any>(null);
   const keepReadingRef = useRef<boolean>(false);
 
@@ -68,6 +70,7 @@ export function useScaleSerial(options: UseScaleSerialOptions = {}) {
 
     try {
       // Prompt user to select COM / USB Serial Port
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const port = await (navigator as any).serial.requestPort();
       await port.open({
         baudRate,
@@ -88,6 +91,20 @@ export function useScaleSerial(options: UseScaleSerialOptions = {}) {
         portInfo: 'Alexa BFS Connected (RS-232)',
         isMock: false,
       }));
+
+      // Deteksi kabel dicabut saat streaming
+      if (typeof port.addEventListener === 'function') {
+        port.addEventListener('disconnect', () => {
+          keepReadingRef.current = false;
+          setStatus((prev) => ({
+            ...prev,
+            isConnected: false,
+            isStreaming: false,
+            portInfo: null,
+            error: 'Kabel timbangan terputus.',
+          }));
+        });
+      }
 
       const textDecoder = new TextDecoderStream();
       const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
@@ -119,6 +136,7 @@ export function useScaleSerial(options: UseScaleSerialOptions = {}) {
         ...prev,
         isConnected: false,
         isStreaming: false,
+        portInfo: null,
         error: errorMsg,
       }));
     }
@@ -148,15 +166,11 @@ export function useScaleSerial(options: UseScaleSerialOptions = {}) {
     }
   }, []);
 
-  // Mock weight simulator (for testing UI before hardware cable is connected)
+  // Input berat manual (mode tanpa kabel). Tidak mengubah isConnected/isMock.
   const setSimulatedWeight = useCallback(
     (weight: number) => {
       const validWeight = Math.max(0, Number(weight) || 0);
-      setStatus((prev) => ({
-        ...prev,
-        currentWeight: validWeight,
-        isMock: true,
-      }));
+      setStatus((prev) => ({ ...prev, currentWeight: validWeight }));
       onWeightChange?.(validWeight);
     },
     [onWeightChange]

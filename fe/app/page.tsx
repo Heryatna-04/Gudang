@@ -48,6 +48,7 @@ import { OfflineSyncService } from '../lib/db/sync-service';
 import { localDB } from '../lib/db/dexie-db';
 import { LoginPanel } from '../components/auth/login-panel';
 import { useToast } from '../components/ui/toast-notification';
+import { useScaleSerial } from '../lib/hardware/use-scale-serial';
 import { supabase, isSupabaseConfigured } from '../lib/supabase/client';
 
 export default function Home() {
@@ -58,8 +59,6 @@ export default function Home() {
 
   React.useEffect(() => {
     try {
-      // Selalu mulai dengan Light Mode setiap kali masuk website
-      setIsDark(false);
       if (typeof document !== 'undefined') {
         document.documentElement.classList.remove('dark');
       }
@@ -87,10 +86,26 @@ export default function Home() {
     });
   };
   
-  // Auth State (Wajib login terlebih dahulu saat membuka website)
-  const [currentUser, setCurrentUser] = useState<{ fullName: string; role: UserRole; username: string } | null>(null);
-  const [isAuthChecked, setIsAuthChecked] = useState<boolean>(false);
-  const [activeRole, setActiveRole] = useState<UserRole>('ADMIN');
+  // Auth State: inisialisasi langsung dari sessionStorage agar tidak re-render cascading
+  const [currentUser, setCurrentUser] = useState<{ fullName: string; role: UserRole; username: string } | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const sessionUser = sessionStorage.getItem('gc_kuningan_auth_user');
+      return sessionUser ? JSON.parse(sessionUser) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthChecked, setIsAuthChecked] = useState<boolean>(() => typeof window !== 'undefined');
+  const [activeRole, setActiveRole] = useState<UserRole>(() => {
+    if (typeof window === 'undefined') return 'ADMIN';
+    try {
+      const sessionUser = sessionStorage.getItem('gc_kuningan_auth_user');
+      return sessionUser ? (JSON.parse(sessionUser).role as UserRole) : 'ADMIN';
+    } catch {
+      return 'ADMIN';
+    }
+  });
   const [activeWarehouseId, setActiveWarehouseId] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
@@ -111,29 +126,33 @@ export default function Home() {
   const [syncTick, setSyncTick] = useState<number>(0);
   const triggerRefresh = () => setSyncTick((prev) => prev + 1);
 
+  // Status koneksi hardware timbangan global untuk sinkronisasi sidebar
+  const scaleController = useScaleSerial({ mockMode: false });
+
+  // Status koneksi internet nyata (bukan hardcode)
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+  React.useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine);
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
+
   const activeWarehouse = MOCK_WAREHOUSES.find((w) => w.id === activeWarehouseId) || MOCK_WAREHOUSES[0];
 
-  // Inisialisasi: Cek session user, baca lokal Dexie & sinkronisasi Supabase Real-Time
+  // Inisialisasi: baca lokal Dexie & sinkronisasi Supabase Real-Time
   React.useEffect(() => {
+    // Bersihkan legacy storage
     try {
-      // Wajib login: gunakan sessionStorage agar setiap kunjungan baru wajib login terlebih dahulu
-      const sessionUser = typeof window !== 'undefined' ? sessionStorage.getItem('gc_kuningan_auth_user') : null;
-      if (sessionUser) {
-        const parsed = JSON.parse(sessionUser);
-        setCurrentUser(parsed);
-        setActiveRole(parsed.role);
-      } else {
-        // Hapus sisa legacy localStorage agar tidak bypass login
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('gc_kuningan_auth_user');
-        }
-        setCurrentUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('gc_kuningan_auth_user');
       }
-    } catch (e) {
-      console.warn('Gagal membaca sesi lokal:', e);
-      setCurrentUser(null);
-    } finally {
-      setIsAuthChecked(true);
+    } catch {
+      // ignore
     }
 
     // 1. Muat data cepat dari IndexedDB lokal
@@ -278,6 +297,7 @@ export default function Home() {
           .order('created_at', { ascending: false });
 
         if (dbTxs && dbTxs.length > 0 && !tErr) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mappedTxs: ScaleTransaction[] = dbTxs.map((t: any) => ({
             id: t.id,
             invoiceNumber: t.invoice_number,
@@ -291,6 +311,7 @@ export default function Home() {
             isApprovedByOwner: Boolean(t.is_approved_by_owner),
             syncStatus: Boolean(t.sync_status),
             createdAt: t.created_at,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             items: (t.scale_transaction_items || []).map((i: any) => ({
               id: i.id,
               transactionId: i.transaction_id,
@@ -319,6 +340,7 @@ export default function Home() {
           .limit(20);
 
         if (dbShifts && dbShifts.length > 0 && !sErr) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const unclosed = dbShifts.find((s: any) => s.closed_at === null);
           if (unclosed) {
             setActiveShift({
@@ -348,10 +370,12 @@ export default function Home() {
           .order('created_at', { ascending: false });
 
         if (dbSales && dbSales.length > 0 && !salErr) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mappedSales: FactorySale[] = dbSales.map((s: any) => ({
             id: s.id,
             invoiceNumber: s.invoice_number,
             warehouseId: Number(s.warehouse_id),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             buyerType: (s.buyer_type as any) || 'PELEBURAN_BESAR',
             factoryName: s.factory_name,
             productId: s.product_id,
@@ -377,6 +401,7 @@ export default function Home() {
           .order('created_at', { ascending: false });
 
         if (dbOpex && dbOpex.length > 0 && !oErr) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mappedOpex: OpexExpense[] = dbOpex.map((o: any) => ({
             id: o.id,
             warehouseId: Number(o.warehouse_id),
@@ -401,6 +426,7 @@ export default function Home() {
           .order('created_at', { ascending: false });
 
         if (dbLoans && dbLoans.length > 0 && !lErr) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mappedLoans: EmployeeLoan[] = dbLoans.map((l: any) => ({
             id: l.id,
             employeeId: l.employee_id,
@@ -427,6 +453,7 @@ export default function Home() {
           .order('created_at', { ascending: false });
 
         if (dbPayrolls && dbPayrolls.length > 0 && !payErr) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mappedPayrolls: PayrollRecord[] = dbPayrolls.map((p: any) => ({
             id: p.id,
             employeeId: p.employee_id,
@@ -453,6 +480,7 @@ export default function Home() {
           .order('created_at', { ascending: false });
 
         if (dbDebts && dbDebts.length > 0 && !dErr) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mappedDebts: DebtRecord[] = dbDebts.map((d: any) => ({
             id: d.id,
             type: d.type,
@@ -599,12 +627,9 @@ export default function Home() {
     }
   };
 
-  // Guard role: Jika role kasir (ADMIN), kunci akses agar tidak bisa membuka tab khusus Owner (Laba/Rugi, Kelola Pegawai, Hutang Piutang)
-  React.useEffect(() => {
-    if (activeRole === 'ADMIN' && (activeTab === 'owner' || activeTab === 'employees' || activeTab === 'debts')) {
-      setActiveTab('pos');
-    }
-  }, [activeRole, activeTab]);
+  // Guard role: Jika role kasir (ADMIN), tab khusus Owner diarahkan ke kasir
+  const isOwnerOnlyTab = activeTab === 'owner' || activeTab === 'employees' || activeTab === 'debts';
+  const effectiveTab = activeRole === 'ADMIN' && isOwnerOnlyTab ? 'pos' : activeTab;
 
   // Kas keluar belanja timbangan pada shift aktif gudang ini
   const totalExpenseToday = transactions
@@ -1018,8 +1043,8 @@ export default function Home() {
   }
 
   return (
-    <div className={`min-h-screen w-full flex flex-col lg:flex-row p-4 md:p-6 gap-6 font-sans antialiased transition-colors duration-200 ${
-      isDark ? 'dark bg-[#050811] text-zinc-100' : 'bg-[#f1f5f3] text-slate-900'
+    <div className={`min-h-screen w-full flex flex-col lg:flex-row p-4 md:p-6 lg:pl-80 gap-6 font-sans antialiased transition-colors duration-200 ${
+      isDark ? 'dark bg-[#09090b] text-zinc-100' : 'bg-[#f1f5f3] text-slate-900'
     }`}>
       {/* Sidebar Eduplex Curved Frame */}
       <Sidebar
@@ -1027,11 +1052,16 @@ export default function Home() {
         setActiveRole={setActiveRole}
         activeWarehouseId={activeWarehouseId}
         setActiveWarehouseId={setActiveWarehouseId}
-        activeTab={activeTab}
+        activeTab={effectiveTab}
         setActiveTab={setActiveTab}
         warehouses={MOCK_WAREHOUSES}
-        isOnline={true}
+        isOnline={isOnline}
         isDark={isDark}
+        scaleStatus={{
+          isConnected: scaleController.isConnected,
+          isMock: scaleController.isMock,
+          portInfo: scaleController.portInfo,
+        }}
       />
 
       {/* Main Content Area */}
@@ -1134,7 +1164,7 @@ export default function Home() {
 
         {/* Scrollable Page Viewport */}
         <main className="flex-1 overflow-y-auto w-full">
-          {activeTab === 'dashboard' && (
+          {effectiveTab === 'dashboard' && (
             <ExecutiveDashboardOverview
               activeRole={activeRole}
               currentUser={currentUser}
@@ -1142,11 +1172,12 @@ export default function Home() {
               transactions={transactions}
               factorySales={salesList}
               isDark={isDark}
+              isOnline={isOnline}
               onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
 
-          {activeTab === 'pos' && (
+          {effectiveTab === 'pos' && (
             <KasirPos
               products={products}
               warehouseId={activeWarehouseId}
@@ -1155,10 +1186,11 @@ export default function Home() {
               transactions={transactions}
               salesList={salesList}
               activeShift={activeShift}
+              scaleController={scaleController}
             />
           )}
 
-          {activeTab === 'sales' && (
+          {effectiveTab === 'sales' && (
             <WarehouseSalesManagement
               currentWarehouseId={activeWarehouseId}
               warehouseName={activeWarehouse.name}
@@ -1168,7 +1200,7 @@ export default function Home() {
             />
           )}
 
-          {activeTab === 'shifts' && (
+          {effectiveTab === 'shifts' && (
             <ShiftManagement
               activeRole={activeRole}
               warehouseId={activeWarehouseId}
@@ -1183,7 +1215,7 @@ export default function Home() {
             />
           )}
 
-          {activeTab === 'opex' && (
+          {effectiveTab === 'opex' && (
             <OpexManagement
               warehouseId={activeWarehouseId}
               warehouseName={activeWarehouse.name}
@@ -1192,7 +1224,7 @@ export default function Home() {
             />
           )}
 
-          {activeTab === 'mutations' && (
+          {effectiveTab === 'mutations' && (
             <StockMutationManagement
               currentWarehouseId={activeWarehouseId}
               warehouses={MOCK_WAREHOUSES}
@@ -1204,7 +1236,7 @@ export default function Home() {
             />
           )}
 
-          {activeTab === 'attendance' && (
+          {effectiveTab === 'attendance' && (
             <AttendanceManagement
               employees={employees}
               loans={loans}
@@ -1221,7 +1253,7 @@ export default function Home() {
             />
           )}
 
-          {activeTab === 'employees' && (
+          {effectiveTab === 'employees' && (
             activeRole === 'OWNER' ? (
               <EmployeeManagement
                 employees={employees}
@@ -1242,7 +1274,7 @@ export default function Home() {
             )
           )}
 
-          {activeTab === 'debts' && (
+          {effectiveTab === 'debts' && (
             activeRole === 'OWNER' ? (
               <DebtReceivableManagement
                 debts={debts}
@@ -1259,7 +1291,7 @@ export default function Home() {
             )
           )}
 
-          {activeTab === 'owner' && (
+          {effectiveTab === 'owner' && (
             <OwnerDashboard
               activeRole={activeRole}
               transactions={transactions}
@@ -1277,7 +1309,7 @@ export default function Home() {
             />
           )}
 
-          {activeTab === 'profile' && (
+          {effectiveTab === 'profile' && (
             <ProfileIdentity
               currentUser={currentUser}
               activeWarehouseName={activeWarehouse.name}

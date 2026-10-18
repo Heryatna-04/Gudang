@@ -39,6 +39,12 @@ import {
 import { exportEnterpriseReportExcel } from '../../lib/export/excel-generator';
 import { UserAccountService } from '../../lib/auth/user-account-service';
 import { ChoiceGroup } from '../ui/choice-group';
+import { StatCard } from '../ui/stat-card';
+import { Card, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table';
 
 interface OwnerDashboardProps {
   activeRole: UserRole;
@@ -79,27 +85,31 @@ export function OwnerDashboard({
   onToggleTheme,
 }: OwnerDashboardProps) {
   // Mode Dark State & Sync dengan LocalStorage & Document Element
-  const [internalDark, setInternalDark] = useState<boolean>(false);
+  const [internalDark, setInternalDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const savedTheme = localStorage.getItem('gc_theme');
+      if (savedTheme === 'dark') return true;
+      if (savedTheme === 'light') return false;
+      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+    } catch {
+      return false;
+    }
+  });
   const isDark = isDarkProp !== undefined ? isDarkProp : internalDark;
 
   useEffect(() => {
     if (isDarkProp !== undefined) return;
     try {
-      const savedTheme = localStorage.getItem('gc_theme');
-      if (savedTheme === 'dark') {
-        setInternalDark(true);
+      if (internalDark) {
         document.documentElement.classList.add('dark');
-      } else if (savedTheme === 'light') {
-        setInternalDark(false);
+      } else {
         document.documentElement.classList.remove('dark');
-      } else if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setInternalDark(true);
-        document.documentElement.classList.add('dark');
       }
     } catch (e) {
-      console.warn('Gagal membaca preferensi tema:', e);
+      console.warn('Gagal sinkron tema ke DOM:', e);
     }
-  }, [isDarkProp]);
+  }, [isDarkProp, internalDark]);
 
   const toggleDarkMode = () => {
     if (onToggleTheme) {
@@ -442,54 +452,41 @@ export function OwnerDashboard({
       </div>
 
       {/* FILTER KALENDER & RENTANG WAKTU FLEKSIBEL (DATE RANGE PICKER) */}
-      <div className={`rounded-2xl border p-5 shadow-sm space-y-4 transition-colors duration-200 ${
-        isDark ? 'border-zinc-800 bg-black text-zinc-100' : 'border-slate-200 bg-white text-slate-900'
-      }`}>
-        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 ${
-          isDark ? 'border-zinc-800/80' : 'border-slate-100'
-        }`}>
+      <Card className="p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className={`rounded-lg p-2 border ${
-              isDark ? 'bg-emerald-950/70 text-emerald-400 border-emerald-800/60' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
-            }`}>
+            <div className="rounded-xl p-2 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-500/20">
               <CalendarDays className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className={`text-sm font-extrabold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
-                  FILTER KALENDER & PERIODE FINANSIAL
-                </h3>
-                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-black border ${
-                  isDark ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                }`}>
-                  {filterMode}
-                </span>
+                <CardTitle className="text-sm font-extrabold">
+                  FILTER KALENDER &amp; PERIODE FINANSIAL
+                </CardTitle>
+                <Badge variant="emerald">{filterMode}</Badge>
               </div>
-              <p className={`text-[11px] font-medium ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
                 {periodDescription}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className={`rounded-xl px-3 py-1.5 text-xs font-bold border flex items-center gap-1.5 ${
-              isDark ? 'bg-zinc-900 border-zinc-700/80 text-zinc-200' : 'bg-slate-100 border-slate-200 text-slate-700'
-            }`}>
-              <Calendar className={`h-3.5 w-3.5 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`} />
+            <Badge variant="slate" className="px-3 py-1.5 text-xs font-bold gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
               <span>{activePeriodLabel}</span>
-            </div>
+            </Badge>
             {filterMode !== 'ALL' && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setFilterMode('ALL')}
-                className={`flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold cursor-pointer transition-colors ${
-                  isDark ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                }`}
+                className="py-1 px-2.5"
                 title="Reset ke Semua Waktu"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Reset</span>
-              </button>
+                <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                Reset
+              </Button>
             )}
           </div>
         </div>
@@ -521,39 +518,32 @@ export function OwnerDashboard({
         </div>
 
         {/* Input Kontrol Kalender Interaktif sesuai Mode */}
-        <div className={`rounded-xl border p-3.5 transition-colors duration-200 ${
-          isDark ? 'border-zinc-800 bg-black' : 'border-slate-200 bg-slate-50'
-        }`}>
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-[#EDF2E8]/40 dark:bg-[#0f172a]/40 p-3.5 transition-colors duration-200">
           {filterMode === 'DAILY' && (
             <div className="flex flex-wrap items-center gap-3">
-              <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Pilih Tanggal:</span>
-              <input
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Pilih Tanggal:</span>
+              <Input
                 type="date"
                 value={selectedDate || latestDataDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-600 font-numeric cursor-pointer ${
-                  isDark ? 'border-slate-700 bg-[#0f172a] text-slate-100' : 'border-slate-300 bg-white text-slate-900'
-                }`}
+                className="w-auto font-numeric cursor-pointer"
               />
               <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setSelectedDate(formatDateToYMD(new Date()))}
-                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-colors ${
-                    isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' : 'bg-white border-slate-300 hover:bg-slate-100 text-slate-700'
-                  }`}
                 >
                   Hari Ini
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setSelectedDate(latestDataDate)}
-                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-colors ${
-                    isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-emerald-400' : 'bg-white border-slate-300 hover:bg-slate-100 text-emerald-800'
-                  }`}
+                  className="text-emerald-800 dark:text-emerald-400 font-bold"
                 >
                   Data Terkini ({formatIndonesianDate(latestDataDate)})
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -715,16 +705,16 @@ export function OwnerDashboard({
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* RINGKASAN KOMODITAS UTAMA & HARGA BENCHMARK */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className={`text-sm font-extrabold tracking-tight ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
-              RINGKASAN KOMODITAS UTAMA &amp; STOK GUDANG
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+              Ringkasan Komoditas Utama &amp; Stok Gudang
             </h3>
-            <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Monitoring harga pasar, stok terkumpul, dan marjin komoditas unggulan
             </p>
           </div>
@@ -734,49 +724,38 @@ export function OwnerDashboard({
           {products.slice(0, 3).map((prod) => {
             const marginPerKg = prod.marketPriceBenchmark - prod.priceRegular;
             return (
-              <div
-                key={prod.id}
-                className={`rounded-2xl border p-4.5 shadow-sm transition-all ${
-                  isDark ? 'border-slate-800 bg-[#0b1220]' : 'border-slate-200 bg-white'
-                }`}
-              >
+              <Card key={prod.id} className="p-4.5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs font-black uppercase tracking-wider ${isDark ? 'text-zinc-200' : 'text-slate-900'}`}>
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
                     {prod.name}
                   </span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    marginPerKg > 0
-                      ? isDark ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60' : 'bg-emerald-100 text-emerald-800'
-                      : isDark ? 'bg-amber-950/80 text-amber-400 border border-amber-800/60' : 'bg-amber-100 text-amber-800'
-                  }`}>
+                  <Badge variant={marginPerKg > 0 ? 'emerald' : 'amber'}>
                     Spread: +Rp{marginPerKg.toLocaleString('id-ID')}/kg
-                  </span>
+                  </Badge>
                 </div>
 
-                <div className="mt-3 flex items-baseline justify-between">
+                <div className="flex items-baseline justify-between pt-1">
                   <div>
-                    <span className={`text-[10px] block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Beli Kasir</span>
-                    <span className={`text-base font-numeric font-black ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>
+                    <span className="text-[10px] block text-slate-400 dark:text-zinc-500 font-medium">Beli Kasir:</span>
+                    <span className="text-base font-numeric font-black text-slate-800 dark:text-zinc-100">
                       Rp{prod.priceRegular.toLocaleString('id-ID')}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className={`text-[10px] block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Benchmark Pabrik</span>
-                    <span className={`text-base font-numeric font-black text-amber-500`}>
+                    <span className="text-[10px] block text-slate-400 dark:text-zinc-500 font-medium">Benchmark Pabrik:</span>
+                    <span className="text-base font-numeric font-black text-amber-500">
                       Rp{prod.marketPriceBenchmark.toLocaleString('id-ID')}
                     </span>
                   </div>
                 </div>
 
-                <div className={`mt-3 pt-2.5 border-t flex items-center justify-between text-xs ${
-                  isDark ? 'border-slate-800/80 text-zinc-400' : 'border-slate-100 text-slate-500'
-                }`}>
-                  <span>Stok Siap Kirim:</span>
-                  <span className={`font-numeric font-black ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>
+                <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                  <span className="text-slate-500 dark:text-zinc-400 font-medium">Stok Siap Kirim:</span>
+                  <span className="font-numeric font-black text-emerald-800 dark:text-emerald-400">
                     {Number(prod.currentStockKg || 0).toLocaleString('id-ID')} kg
                   </span>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -785,108 +764,54 @@ export function OwnerDashboard({
       {/* FINANCIAL METRIC CARDS - OMZET, KAS KELUAR, LABA KOTOR & LABA BERSIH */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. OMZET (TOTAL PENJUALAN STOK) */}
-        <div className={`rounded-2xl border p-5 shadow-sm transition-colors duration-200 ${
-          isDark ? 'border-zinc-800 bg-black' : 'border-slate-200 bg-white'
-        }`}>
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-              Total Omzet (Penjualan)
-            </span>
-            <div className={`rounded-lg p-1.5 border ${
-              isDark ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
-            }`}>
-              <TrendingUp className="h-4 w-4" />
-            </div>
-          </div>
-          <div className={`mt-2 font-numeric text-2xl font-black ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>
-            Rp{totalSalesRevenue.toLocaleString('id-ID')}
-          </div>
-          <div className={`mt-1 flex items-center gap-1 text-[11px] font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
-            <span>Peleburan &amp; Pembeli Biasa</span>
-            <span className="text-zinc-500">•</span>
-            <span className="font-numeric">{filteredFactorySales.length} Transaksi</span>
-          </div>
-        </div>
+        <StatCard
+          title="Total Omzet (Penjualan)"
+          value={`Rp${totalSalesRevenue.toLocaleString('id-ID')}`}
+          subtitle={`${filteredFactorySales.length} Transaksi Peleburan & Eceran`}
+          icon={TrendingUp}
+          variant="emerald"
+        />
 
         {/* 2. TOTAL KAS KELUAR (BELANJA + OPEX) */}
-        <div className={`rounded-2xl border p-5 shadow-sm transition-colors duration-200 ${
-          isDark ? 'border-zinc-800 bg-black' : 'border-slate-200 bg-white'
-        }`}>
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-              Total Kas Keluar
-            </span>
-            <div className={`rounded-lg p-1.5 border ${
-              isDark ? 'bg-rose-950/80 text-rose-400 border-rose-900/60' : 'bg-rose-100 text-rose-700 border-rose-200'
-            }`}>
-              <TrendingDown className="h-4 w-4" />
-            </div>
-          </div>
-          <div className={`mt-2 font-numeric text-2xl font-black ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
-            Rp{totalCashOutflow.toLocaleString('id-ID')}
-          </div>
-          <div className={`mt-1 text-[11px] font-medium ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-            Belanja: <span className={`font-numeric font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>Rp{totalPurchaseExpenses.toLocaleString('id-ID')}</span> • OPEX: <span className={`font-numeric font-bold ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Rp{totalOpexExpenses.toLocaleString('id-ID')}</span>
-          </div>
-        </div>
+        <StatCard
+          title="Total Kas Keluar"
+          value={`Rp${totalCashOutflow.toLocaleString('id-ID')}`}
+          subtitle={`Belanja Rp${(totalPurchaseExpenses / 1000000).toFixed(1)}Jt • OPEX Rp${(totalOpexExpenses / 1000).toFixed(0)}Rb`}
+          icon={TrendingDown}
+          variant="rose"
+        />
 
         {/* 3. ESTIMASI LABA KOTOR (GROSS PROFIT) */}
-        <div className={`rounded-2xl border p-5 shadow-sm transition-colors duration-200 ${
-          isDark ? 'border-zinc-800 bg-black' : 'border-slate-200 bg-white'
-        }`}>
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-              Estimasi Laba Kotor
-            </span>
-            <div className={`rounded-lg p-1.5 border ${
-              isDark ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
-            }`}>
-              <BarChart3 className="h-4 w-4" />
-            </div>
-          </div>
-          <div className={`mt-2 font-numeric text-2xl font-black ${isDark ? 'text-emerald-300' : 'text-emerald-950'}`}>
-            Rp{estimatedGrossProfit.toLocaleString('id-ID')}
-          </div>
-          <div className={`mt-1 text-[11px] font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-800'}`}>
-            Omzet - Belanja • Margin Kotor: <span className="font-numeric">~{grossMarginPct}%</span>
-          </div>
-        </div>
+        <StatCard
+          title="Estimasi Laba Kotor"
+          value={`Rp${estimatedGrossProfit.toLocaleString('id-ID')}`}
+          subtitle={`Omzet - Belanja • Margin ~${grossMarginPct}%`}
+          icon={BarChart3}
+          variant="emerald"
+        />
 
         {/* 4. ESTIMASI LABA BERSIH (NET PROFIT) */}
-        <div className={`rounded-2xl border p-5 shadow-sm transition-colors duration-200 ${
-          isDark ? 'border-zinc-800 bg-black' : 'border-slate-200 bg-white'
-        }`}>
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-              Estimasi Laba Bersih
-            </span>
-            <div className={`rounded-lg p-1.5 border ${
-              isDark ? 'bg-amber-950/80 text-amber-400 border-amber-800/60' : 'bg-amber-100 text-amber-800 border-amber-200'
-            }`}>
-              <Sparkles className="h-4 w-4" />
-            </div>
-          </div>
-          <div className={`mt-2 font-numeric text-2xl font-black ${isDark ? 'text-amber-400' : 'text-amber-800'}`}>
-            Rp{estimatedNetProfit.toLocaleString('id-ID')}
-          </div>
-          <div className={`mt-1 text-[11px] font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-            Laba Kotor - OPEX • Margin Bersih: <span className="font-numeric">~{netMarginPct}%</span>
-          </div>
-        </div>
+        <StatCard
+          title="Estimasi Laba Bersih"
+          value={`Rp${estimatedNetProfit.toLocaleString('id-ID')}`}
+          subtitle={`Laba Kotor - OPEX • Margin ~${netMarginPct}%`}
+          icon={Sparkles}
+          variant="amber"
+        />
       </div>
 
       {/* APPROVAL TRANSAKSI JUMBO */}
-      <div className="rounded-2xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/70 dark:bg-black p-5 shadow-sm transition-colors duration-200">
-        <div className="flex items-center justify-between border-b border-amber-200 dark:border-amber-900/40 pb-3">
+      <Card className="p-5 border-amber-300 dark:border-amber-800/40 bg-amber-50/40 dark:bg-amber-950/20">
+        <div className="flex items-center justify-between border-b border-amber-200/80 dark:border-amber-900/40 pb-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-400" />
-            <h3 className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">
+            <CardTitle className="text-sm font-extrabold text-amber-950 dark:text-amber-200">
               APPROVAL TRANSAKSI JUMBO (&gt; Rp 10.000.000)
-            </h3>
+            </CardTitle>
           </div>
-          <span className="rounded-lg bg-amber-200 dark:bg-amber-950/80 px-2.5 py-1 text-xs font-black text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
+          <Badge variant="amber">
             {pendingJumboTransactions.length} Menunggu Persetujuan
-          </span>
+          </Badge>
         </div>
 
         <div className="mt-3 space-y-2">
@@ -896,9 +821,9 @@ export function OwnerDashboard({
             </div>
           ) : (
             pendingJumboTransactions.map((tx) => (
-              <div
+              <Card
                 key={tx.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-300 dark:border-amber-800/40 bg-white dark:bg-black p-3.5 text-xs shadow-xs"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 text-xs bg-white dark:bg-[#0b1220]"
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -910,35 +835,36 @@ export function OwnerDashboard({
                   </div>
                 </div>
 
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={() => handleOpenApprovalModal(tx)}
-                  className="rounded-xl bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 px-4 py-2 text-xs font-extrabold text-white shadow-xs cursor-pointer transition-colors"
+                  className="font-black"
                 >
                   Approve Transaksi Jumbo (PIN Owner)
-                </button>
-              </div>
+                </Button>
+              </Card>
             ))
           )}
         </div>
-      </div>
+      </Card>
 
       {/* MONITORING KEHADIRAN PEKERJA GUDANG 1 */}
-      <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm space-y-4 transition-colors duration-200">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800 pb-3">
+      <Card className="p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
-            <h3 className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">
+            <CardTitle className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">
               MONITORING KEHADIRAN PEKERJA ({activePeriodLabel})
-            </h3>
+            </CardTitle>
           </div>
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">
+          <Badge variant="slate">
             {targetAttendances.length} Status Absen Tercatat ({formatIndonesianDate(activeStartDate || targetAttendanceDate)})
-          </span>
+          </Badge>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-black p-3 text-center">
+          <div className="rounded-2xl border border-emerald-500/20 bg-[#EDF2E8]/60 dark:bg-[#0f172a] p-3 text-center">
             <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 mb-1">
               <Sun className="h-3.5 w-3.5" />
               <span>Shift Pagi</span>
@@ -946,31 +872,31 @@ export function OwnerDashboard({
             <div className="text-xl font-black font-numeric text-emerald-900 dark:text-emerald-200">{presentCountPagi} Org</div>
           </div>
 
-          <div className="rounded-xl border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-black p-3 text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-indigo-800 dark:text-indigo-300 mb-1">
+          <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 dark:bg-indigo-950/30 p-3 text-center">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 mb-1">
               <Moon className="h-3.5 w-3.5" />
               <span>Shift Malam</span>
             </div>
             <div className="text-xl font-black font-numeric text-indigo-900 dark:text-indigo-200">{presentCountMalam} Org</div>
           </div>
 
-          <div className="rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/70 dark:bg-black p-3 text-center">
-            <div className="text-[11px] font-bold text-blue-800 dark:text-blue-300 mb-1">Izin / Sakit</div>
+          <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 dark:bg-blue-950/30 p-3 text-center">
+            <div className="text-[11px] font-bold text-blue-700 dark:text-blue-300 mb-1">Izin / Sakit</div>
             <div className="text-xl font-black font-numeric text-blue-900 dark:text-blue-200">{permissionCount} Org</div>
           </div>
 
-          <div className="rounded-xl border border-red-200 dark:border-rose-900/50 bg-red-50/70 dark:bg-black p-3 text-center">
-            <div className="text-[11px] font-bold text-red-800 dark:text-rose-300 mb-1">Alpa / Tanpa Ket.</div>
-            <div className="text-xl font-black font-numeric text-red-900 dark:text-rose-200">{absentCount} Org</div>
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 dark:bg-rose-950/30 p-3 text-center">
+            <div className="text-[11px] font-bold text-rose-700 dark:text-rose-300 mb-1">Alpa / Tanpa Ket.</div>
+            <div className="text-xl font-black font-numeric text-rose-900 dark:text-rose-200">{absentCount} Org</div>
           </div>
         </div>
 
         {targetAttendances.length === 0 ? (
-          <div className="rounded-xl bg-slate-50 dark:bg-black p-3 text-center text-xs text-slate-500 dark:text-zinc-400 font-medium border border-slate-100 dark:border-zinc-800">
+          <div className="rounded-xl bg-slate-50 dark:bg-[#0f172a] p-3 text-center text-xs text-slate-500 dark:text-zinc-400 font-medium border border-slate-100 dark:border-slate-800">
             Belum ada absensi yang dicatat untuk tanggal ini. Pengisian dilakukan di menu &quot;Absensi Karyawan&quot;.
           </div>
         ) : (
-          <div className="rounded-xl bg-slate-50 dark:bg-black p-3 text-xs text-slate-700 dark:text-zinc-300 flex flex-wrap items-center justify-between gap-2 border border-slate-100 dark:border-zinc-800">
+          <div className="rounded-xl bg-[#EDF2E8]/40 dark:bg-[#0f172a] p-3 text-xs text-slate-700 dark:text-zinc-300 flex flex-wrap items-center justify-between gap-2 border border-slate-200/80 dark:border-slate-800">
             <span className="font-bold text-emerald-950 dark:text-emerald-400">
               Total Hadir Bekerja: <span className="text-emerald-800 dark:text-emerald-300 font-numeric text-sm">{totalPresentToday}</span> Orang
             </span>
@@ -979,31 +905,32 @@ export function OwnerDashboard({
             </span>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* MASTER KOMODITAS & PENETAPAN HARGA BELI (KHUSUS OWNER) */}
-      <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm space-y-4 transition-colors duration-200">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800 pb-3">
+      <Card className="p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div>
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
-              <h3 className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">
+              <CardTitle className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">
                 Master Komoditas &amp; Penetapan Harga Beli (Khusus Owner)
-              </h3>
+              </CardTitle>
             </div>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
               Input komoditas baru dan update harga beli timbangan (Langganan &amp; Eceran) serta patokan pasar. Kasir hanya dapat memilih dari daftar ini.
             </p>
           </div>
 
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => setShowAddProductModal(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 px-3.5 py-2 text-xs font-black text-white shadow-xs transition-all w-fit cursor-pointer"
+            className="w-fit font-black"
           >
             <Plus className="h-4 w-4" />
-            <span>+ Tambah Komoditas Baru</span>
-          </button>
+            <span>Tambah Komoditas Baru</span>
+          </Button>
         </div>
 
         {/* Modal / Form Tambah Komoditas Baru */}
@@ -1107,277 +1034,298 @@ export function OwnerDashboard({
         )}
 
         {/* Grid Kartu Komoditas & Edit Harga */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p) => {
             const isEditing = editingProdId === p.id;
             const marginSpread = (isEditing ? editBenchmark : p.marketPriceBenchmark) - (isEditing ? editPriceRegular : p.priceRegular);
+            const totalAssetValue = (p.currentStockKg || 0) * (isEditing ? editBenchmark : p.marketPriceBenchmark);
 
             return (
               <div
                 key={p.id}
-                className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-3.5 text-xs space-y-2 relative transition-colors duration-200"
+                className={`rounded-2xl border transition-all duration-200 p-4 flex flex-col justify-between ${
+                  isEditing
+                    ? 'border-emerald-500/80 ring-2 ring-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/20'
+                    : 'border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs hover:border-emerald-500/40'
+                }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="font-extrabold text-slate-900 dark:text-zinc-100">{p.name}</div>
-                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 uppercase tracking-wider font-semibold">
-                      {p.category.replace(/_/g, ' ')}
+                <div>
+                  {/* Top Bar: Title, Category & Stock/Edit Badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-extrabold text-sm text-slate-900 dark:text-zinc-100 truncate" title={p.name}>
+                        {p.name}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge variant="slate" className="text-[9px] font-bold tracking-wider uppercase">
+                          {p.category.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Badge variant="emerald" className="font-numeric font-bold text-[10px]">
+                        Stok: {(p.currentStockKg || 0).toLocaleString('id-ID')} Kg
+                      </Badge>
+                      {!isEditing ? (
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(p)}
+                          className="flex items-center gap-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-zinc-200 cursor-pointer transition-colors"
+                        >
+                          <Edit3 className="h-3 w-3" />
+                          <span>Edit</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEdit(p.id)}
+                            className="rounded-xl bg-emerald-800 dark:bg-emerald-600 text-white p-1.5 hover:bg-emerald-900 dark:hover:bg-emerald-500 cursor-pointer shadow-xs transition-colors"
+                            title="Simpan"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingProdId(null)}
+                            className="rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-zinc-300 p-1.5 hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                            title="Batal"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-black border border-emerald-200 dark:border-emerald-800 font-numeric">
-                      Stok: {p.currentStockKg.toLocaleString('id-ID')} Kg
-                    </span>
-                    {!isEditing ? (
-                      <button
-                        type="button"
-                        onClick={() => handleStartEdit(p)}
-                        className="flex items-center gap-1 rounded bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
-                      >
-                        <Edit3 className="h-3 w-3" />
-                        Edit
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleSaveEdit(p.id)}
-                          className="rounded bg-emerald-800 dark:bg-emerald-700 text-white p-1 hover:bg-emerald-900 dark:hover:bg-emerald-600 cursor-pointer"
-                          title="Simpan"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingProdId(null)}
-                          className="rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 p-1 hover:bg-slate-300 dark:hover:bg-zinc-700 cursor-pointer"
-                          title="Batal"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+
+                  {/* Body Content: Edit Mode vs View Mode */}
+                  {isEditing ? (
+                    <div className="space-y-2 mt-3 pt-3 border-t border-emerald-200/60 dark:border-emerald-900/60">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-600 dark:text-zinc-400">Beli Langganan:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-slate-400">Rp</span>
+                          <input
+                            type="number"
+                            value={editPricePartner}
+                            onChange={(e) => setEditPricePartner(parseFloat(e.target.value) || 0)}
+                            className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-right font-black text-emerald-800 dark:text-emerald-400 text-xs font-numeric focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
                       </div>
-                    )}
-                  </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-600 dark:text-zinc-400">Beli Eceran:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-slate-400">Rp</span>
+                          <input
+                            type="number"
+                            value={editPriceRegular}
+                            onChange={(e) => setEditPriceRegular(parseFloat(e.target.value) || 0)}
+                            className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-right font-black text-slate-800 dark:text-zinc-100 text-xs font-numeric focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-600 dark:text-zinc-400">Benchmark Pabrik:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-slate-400">Rp</span>
+                          <input
+                            type="number"
+                            value={editBenchmark}
+                            onChange={(e) => setEditBenchmark(parseFloat(e.target.value) || 0)}
+                            className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-right font-black text-amber-600 dark:text-amber-400 text-xs font-numeric focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+                      {/* Price Grid (Langganan vs Eceran) */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-[#EDF2E8]/40 dark:bg-slate-800/40 p-2 border border-slate-100 dark:border-slate-800/60">
+                          <span className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 block">Beli Langganan</span>
+                          <span className="font-numeric font-extrabold text-xs text-emerald-800 dark:text-emerald-400">
+                            Rp{p.pricePartner.toLocaleString('id-ID')}
+                            <span className="text-[10px] font-normal text-slate-400">/kg</span>
+                          </span>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/30 p-2 border border-slate-100 dark:border-slate-800/60">
+                          <span className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 block">Beli Eceran</span>
+                          <span className="font-numeric font-extrabold text-xs text-slate-800 dark:text-zinc-200">
+                            Rp{p.priceRegular.toLocaleString('id-ID')}
+                            <span className="text-[10px] font-normal text-slate-400">/kg</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Benchmark & Margin Highlight */}
+                      <div className="rounded-xl bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/20 px-2.5 py-1.5 flex items-center justify-between text-xs">
+                        <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                          Benchmark Pabrik:
+                        </span>
+                        <span className="font-numeric font-black text-xs text-amber-600 dark:text-amber-400">
+                          Rp{p.marketPriceBenchmark.toLocaleString('id-ID')}/kg
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {isEditing ? (
-                  <div className="space-y-1.5 pt-1 border-t border-slate-200 dark:border-zinc-800">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-medium text-slate-600 dark:text-zinc-400">Beli Langganan:</span>
-                      <input
-                        type="number"
-                        value={editPricePartner}
-                        onChange={(e) => setEditPricePartner(parseFloat(e.target.value) || 0)}
-                        className="w-24 rounded border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-0.5 text-right font-bold text-emerald-800 dark:text-emerald-400 text-xs font-numeric"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-medium text-slate-600 dark:text-zinc-400">Beli Eceran:</span>
-                      <input
-                        type="number"
-                        value={editPriceRegular}
-                        onChange={(e) => setEditPriceRegular(parseFloat(e.target.value) || 0)}
-                        className="w-24 rounded border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-0.5 text-right font-bold text-slate-800 dark:text-zinc-200 text-xs font-numeric"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-medium text-slate-600 dark:text-zinc-400">Benchmark Pasar:</span>
-                      <input
-                        type="number"
-                        value={editBenchmark}
-                        onChange={(e) => setEditBenchmark(parseFloat(e.target.value) || 0)}
-                        className="w-24 rounded border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-0.5 text-right font-bold text-slate-900 dark:text-zinc-100 text-xs font-numeric"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-[11px] text-slate-600 dark:text-zinc-400 flex justify-between font-numeric">
-                      <span>Beli Langganan:</span>
-                      <span className="font-bold text-slate-800 dark:text-zinc-200">Rp{p.pricePartner.toLocaleString('id-ID')}/kg</span>
-                    </div>
-                    <div className="text-[11px] text-slate-600 dark:text-zinc-400 flex justify-between font-numeric">
-                      <span>Beli Eceran:</span>
-                      <span className="font-bold text-slate-800 dark:text-zinc-200">Rp{p.priceRegular.toLocaleString('id-ID')}/kg</span>
-                    </div>
-                    <div className="text-[11px] text-emerald-800 dark:text-emerald-400 flex justify-between border-t border-slate-200 dark:border-zinc-800 pt-1 font-numeric">
-                      <span className="font-bold">Benchmark Pasar:</span>
-                      <span className="font-black">Rp{p.marketPriceBenchmark.toLocaleString('id-ID')}/kg</span>
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-numeric font-medium flex justify-between border-t border-slate-200/60 dark:border-zinc-800/60 pt-1">
-                      <span>Spread: +Rp{marginSpread.toLocaleString('id-ID')}/kg</span>
-                      <span className="font-bold text-slate-700 dark:text-zinc-300">
-                        Aset: Rp{(p.currentStockKg * p.marketPriceBenchmark).toLocaleString('id-ID')}
-                      </span>
-                    </div>
-                  </>
-                )}
+                {/* Footer: Spread & Asset Evaluation */}
+                <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] font-numeric">
+                  <Badge variant={marginSpread > 0 ? 'emerald' : 'amber'} className="text-[10px] px-2 py-0.5">
+                    Spread: +Rp{marginSpread.toLocaleString('id-ID')}/kg
+                  </Badge>
+                  <span className="font-semibold text-slate-500 dark:text-zinc-400">
+                    Aset: <strong className="text-slate-800 dark:text-zinc-200">Rp{totalAssetValue.toLocaleString('id-ID')}</strong>
+                  </span>
+                </div>
               </div>
             );
           })}
         </div>
-      </div>
+      </Card>
 
       {/* TABEL AUDIT & RIWAYAT TRANSAKSI REAL-TIME (PEMBELIAN & PENJUALAN) */}
-      <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm transition-colors duration-200 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800 pb-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setAuditTab('pembelian')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-                auditTab === 'pembelian'
-                  ? 'bg-emerald-900 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
-              }`}
-            >
-              <ArrowDownRight className="h-4 w-4 text-amber-400" />
-              <span>Riwayat Pembelian Timbangan ({filteredTransactions.length})</span>
-            </button>
+      <Card className="p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <ChoiceGroup
+            value={auditTab}
+            onChange={(val) => setAuditTab(val as 'pembelian' | 'penjualan')}
+            options={[
+              {
+                value: 'pembelian',
+                label: `Riwayat Pembelian Timbangan (${filteredTransactions.length})`,
+                icon: <ArrowDownRight className="h-4 w-4 text-amber-400" />,
+              },
+              {
+                value: 'penjualan',
+                label: `Riwayat Penjualan Stok (${filteredFactorySales.length})`,
+                icon: <ArrowUpRight className="h-4 w-4 text-emerald-400" />,
+              },
+            ]}
+          />
 
-            <button
-              type="button"
-              onClick={() => setAuditTab('penjualan')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-                auditTab === 'penjualan'
-                  ? 'bg-emerald-900 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
-              }`}
-            >
-              <ArrowUpRight className="h-4 w-4 text-emerald-400" />
-              <span>Riwayat Penjualan Stok Gudang ({filteredFactorySales.length})</span>
-            </button>
-          </div>
-
-          <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
-            Periode: <span className="font-bold text-slate-800 dark:text-zinc-200">{activePeriodLabel}</span>
-          </span>
+          <Badge variant="slate" className="px-3 py-1.5 text-xs font-semibold">
+            Periode: <strong className="ml-1 text-slate-800 dark:text-zinc-200">{activePeriodLabel}</strong>
+          </Badge>
         </div>
 
         {/* Tabel Pembelian Timbangan */}
         {auditTab === 'pembelian' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200 dark:border-zinc-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-zinc-400 bg-slate-50/50 dark:bg-black">
-                <tr>
-                  <th className="py-2.5 px-3">No. Nota</th>
-                  <th className="py-2.5 px-3">Gudang</th>
-                  <th className="py-2.5 px-3">Penjual</th>
-                  <th className="py-2.5 px-3">Item</th>
-                  <th className="py-2.5 px-3">Total Nilai</th>
-                  <th className="py-2.5 px-3">Status Approval</th>
-                  <th className="py-2.5 px-3">Waktu</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-slate-700 dark:text-zinc-300 font-numeric">
-                {filteredTransactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-sans">
-                      Tidak ada transaksi timbangan pada periode kalender yang dipilih.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTransactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
-                      <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-zinc-100">{tx.invoiceNumber}</td>
-                      <td className="py-3 px-3 font-sans font-medium text-slate-600 dark:text-zinc-400">Gudang {tx.warehouseId}</td>
-                      <td className="py-3 px-3 font-sans font-semibold text-slate-900 dark:text-zinc-200">{tx.sellerName}</td>
-                      <td className="py-3 px-3 text-slate-500 dark:text-zinc-400 font-sans">{tx.items.length} Barang</td>
-                      <td className="py-3 px-3 font-black text-amber-700 dark:text-amber-400">
-                        Rp{tx.totalAmount.toLocaleString('id-ID')}
-                      </td>
-                      <td className="py-3 px-3 font-sans">
-                        {tx.requiresOwnerApproval ? (
-                          tx.isApprovedByOwner ? (
-                            <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-                              APPROVED
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => handleOpenApprovalModal(tx)}
-                              className="rounded bg-amber-500 hover:bg-amber-600 px-2 py-0.5 text-[10px] font-black text-white shadow-xs transition-colors cursor-pointer"
-                            >
-                              SETUJUI SEKARANG
-                            </button>
-                          )
+          <Table>
+            <TableHeader>
+              <tr>
+                <TableHead>No. Nota</TableHead>
+                <TableHead>Gudang</TableHead>
+                <TableHead>Penjual</TableHead>
+                <TableHead>Item</TableHead>
+                <TableHead>Total Nilai</TableHead>
+                <TableHead>Status Approval</TableHead>
+                <TableHead>Waktu</TableHead>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {filteredTransactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-sans">
+                    Tidak ada transaksi timbangan pada periode kalender yang dipilih.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTransactions.map((tx) => (
+                  <TableRow key={tx.id}>
+                    <TableCell className="font-mono font-bold text-slate-900 dark:text-zinc-100">{tx.invoiceNumber}</TableCell>
+                    <TableCell className="font-sans font-medium text-slate-600 dark:text-zinc-400">Gudang {tx.warehouseId}</TableCell>
+                    <TableCell className="font-sans font-semibold text-slate-900 dark:text-zinc-200">{tx.sellerName}</TableCell>
+                    <TableCell className="text-slate-500 dark:text-zinc-400 font-sans">{tx.items.length} Barang</TableCell>
+                    <TableCell className="font-numeric font-black text-amber-700 dark:text-amber-400">
+                      Rp{tx.totalAmount.toLocaleString('id-ID')}
+                    </TableCell>
+                    <TableCell className="font-sans">
+                      {tx.requiresOwnerApproval ? (
+                        tx.isApprovedByOwner ? (
+                          <Badge variant="emerald">APPROVED</Badge>
                         ) : (
-                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">NORMAL</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 text-slate-400 dark:text-zinc-500 font-sans">
-                        {new Date(tx.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} {new Date(tx.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                          <Button
+                            variant="amber"
+                            size="sm"
+                            onClick={() => handleOpenApprovalModal(tx)}
+                            className="text-[10px] py-0.5 px-2 font-black"
+                          >
+                            SETUJUI SEKARANG
+                          </Button>
+                        )
+                      ) : (
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">NORMAL</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-slate-400 dark:text-zinc-500 font-sans text-xs">
+                      {new Date(tx.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} {new Date(tx.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         )}
 
         {/* Tabel Penjualan Stok Gudang ke Pabrik / Eceran */}
         {auditTab === 'penjualan' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200 dark:border-zinc-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-zinc-400 bg-slate-50/50 dark:bg-black">
-                <tr>
-                  <th className="py-2.5 px-3">No. Invoice</th>
-                  <th className="py-2.5 px-3">Gudang</th>
-                  <th className="py-2.5 px-3">Pembeli / Pabrik</th>
-                  <th className="py-2.5 px-3">Komoditas Logam</th>
-                  <th className="py-2.5 px-3">Tonase (Kg)</th>
-                  <th className="py-2.5 px-3">Harga / Kg</th>
-                  <th className="py-2.5 px-3">Total Kas Masuk</th>
-                  <th className="py-2.5 px-3">Metode Bayar</th>
-                  <th className="py-2.5 px-3">Waktu</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-slate-700 dark:text-zinc-300 font-numeric">
-                {filteredFactorySales.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-sans">
-                      Tidak ada transaksi penjualan stok pada periode kalender yang dipilih.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredFactorySales.map((sale) => (
-                    <tr key={sale.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
-                      <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-zinc-100">{sale.invoiceNumber}</td>
-                      <td className="py-3 px-3 font-sans font-medium text-slate-600 dark:text-zinc-400">Gudang {sale.warehouseId}</td>
-                      <td className="py-3 px-3 font-sans">
-                        <div className="font-bold text-slate-900 dark:text-zinc-100">{sale.factoryName}</div>
-                        <div className="text-[10px] text-slate-500 dark:text-zinc-400">
-                          {sale.buyerType === 'PELEBURAN_BESAR' ? 'Peleburan Tonase' : 'Pembeli Biasa'}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 font-sans font-medium text-slate-800 dark:text-zinc-200">{sale.productName || 'Komoditas'}</td>
-                      <td className="py-3 px-3 font-black text-slate-900 dark:text-zinc-100">{sale.weightKg} Kg</td>
-                      <td className="py-3 px-3 text-slate-600 dark:text-zinc-400">Rp{sale.contractPricePerKg.toLocaleString('id-ID')}</td>
-                      <td className="py-3 px-3 font-black text-emerald-800 dark:text-emerald-400 text-sm">
-                        Rp{sale.totalRevenue.toLocaleString('id-ID')}
-                      </td>
-                      <td className="py-3 px-3 font-sans">
-                        <span
-                          className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
-                            sale.paymentMethod === 'CASH_LACI'
-                              ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                              : 'bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-300 border-slate-300 dark:border-zinc-700'
-                          }`}
-                        >
-                          {sale.paymentMethod === 'CASH_LACI' ? 'KAS TUNAI LACI' : 'TRANSFER BANK'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-slate-400 dark:text-zinc-500 font-sans">
-                        {new Date(sale.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} {new Date(sale.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <tr>
+                <TableHead>No. Invoice</TableHead>
+                <TableHead>Gudang</TableHead>
+                <TableHead>Pembeli / Pabrik</TableHead>
+                <TableHead>Komoditas</TableHead>
+                <TableHead>Tonase (Kg)</TableHead>
+                <TableHead>Harga / Kg</TableHead>
+                <TableHead>Total Kas Masuk</TableHead>
+                <TableHead>Metode</TableHead>
+                <TableHead>Waktu</TableHead>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {filteredFactorySales.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="py-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-sans">
+                    Tidak ada transaksi penjualan stok pada periode kalender yang dipilih.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredFactorySales.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell className="font-mono font-bold text-slate-900 dark:text-zinc-100">{sale.invoiceNumber}</TableCell>
+                    <TableCell className="font-sans font-medium text-slate-600 dark:text-zinc-400">Gudang {sale.warehouseId}</TableCell>
+                    <TableCell>
+                      <div className="font-bold text-slate-900 dark:text-zinc-100">{sale.factoryName}</div>
+                      <Badge variant="slate" className="text-[9px] mt-0.5">
+                        {sale.buyerType === 'PELEBURAN_BESAR' ? 'Peleburan Tonase' : 'Pembeli Biasa'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-sans font-medium text-slate-800 dark:text-zinc-200">{sale.productName || 'Komoditas'}</TableCell>
+                    <TableCell className="font-numeric font-bold">{sale.weightKg.toLocaleString('id-ID')} Kg</TableCell>
+                    <TableCell className="font-numeric">Rp{sale.contractPricePerKg.toLocaleString('id-ID')}</TableCell>
+                    <TableCell className="font-numeric font-black text-emerald-800 dark:text-emerald-400">
+                      Rp{sale.totalRevenue.toLocaleString('id-ID')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={sale.paymentMethod === 'CASH_LACI' ? 'emerald' : 'blue'}>
+                        {sale.paymentMethod === 'CASH_LACI' ? 'KAS TUNAI LACI' : 'TRANSFER BANK'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-slate-400 dark:text-zinc-500 font-sans text-xs">
+                      {new Date(sale.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} {new Date(sale.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </Card>
 
       {/* Modal Otorisasi PIN Owner untuk Transaksi Jumbo */}
       {jumboTxToApprove && (
@@ -1441,7 +1389,7 @@ export function OwnerDashboard({
                     type="password"
                     value={ownerPinInput}
                     onChange={(e) => setOwnerPinInput(e.target.value)}
-                    placeholder="Masukkan PIN Owner (misal: 8888)"
+                    placeholder="Masukkan PIN Owner"
                     className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-black pl-10 pr-3.5 py-2.5 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-700 font-mono font-bold"
                     autoFocus
                     required

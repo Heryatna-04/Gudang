@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Scale,
   Printer,
@@ -24,6 +24,13 @@ import { Product, ScaleTransaction, ScaleTransactionItem, FactorySale, CashShift
 import { useScaleSerial } from '../../lib/hardware/use-scale-serial';
 import { buildThermalReceiptESC, printThermalReceipt } from '../../lib/hardware/escpos-builder';
 import { useToast } from '../ui/toast-notification';
+import { Card, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { ChoiceGroup } from '../ui/choice-group';
+import { Select } from '../ui/select';
+import { StatCard } from '../ui/stat-card';
 
 interface KasirPosProps {
   products: Product[];
@@ -33,6 +40,7 @@ interface KasirPosProps {
   transactions?: ScaleTransaction[];
   salesList?: FactorySale[];
   activeShift?: CashShift | null;
+  scaleController?: ReturnType<typeof useScaleSerial>;
 }
 
 export function KasirPos({
@@ -43,6 +51,7 @@ export function KasirPos({
   transactions = [],
   salesList = [],
   activeShift,
+  scaleController: injectedScaleController,
 }: KasirPosProps) {
   const { success, warning } = useToast();
   const [posTab, setPosTab] = useState<'pos' | 'history'>('pos');
@@ -52,6 +61,8 @@ export function KasirPos({
 
   const warehouseTransactions = (transactions || []).filter((t) => t.warehouseId === warehouseId);
   const warehouseSales = (salesList || []).filter((s) => s.warehouseId === warehouseId);
+  
+  const internalScaleController = useScaleSerial({ mockMode: true });
   const {
     currentWeight,
     isConnected,
@@ -61,7 +72,7 @@ export function KasirPos({
     disconnectHardware,
     setSimulatedWeight,
     resetTare,
-  } = useScaleSerial({ mockMode: true });
+  } = injectedScaleController || internalScaleController;
 
   // Pilihan nama penjual umum/keliling + Opsi input bebas
   const defaultSellers = [
@@ -89,23 +100,20 @@ export function KasirPos({
   const [cashGiven, setCashGiven] = useState<number>(0);
 
   // State Deteksi Pulih Mati Lampu (Power Outage Recovery Banner)
-  const [recoveredDraftFound, setRecoveredDraftFound] = useState<boolean>(false);
-  const draftStorageKey = `gc_kuningan_cart_draft_wh_${warehouseId}`;
-
-  // 1. Cek draft tersimpan saat inisialisasi
-  useEffect(() => {
+  const [recoveredDraftFound, setRecoveredDraftFound] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
     try {
-      const saved = localStorage.getItem(draftStorageKey);
+      const saved = localStorage.getItem(`gc_kuningan_cart_draft_wh_${warehouseId}`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.cartItems) && parsed.cartItems.length > 0) {
-          setRecoveredDraftFound(true);
-        }
+        return Array.isArray(parsed.cartItems) && parsed.cartItems.length > 0;
       }
-    } catch (e) {
-      console.warn('Gagal membaca draft lokal:', e);
+    } catch {
+      return false;
     }
-  }, [draftStorageKey]);
+    return false;
+  });
+  const draftStorageKey = `gc_kuningan_cart_draft_wh_${warehouseId}`;
 
   // 2. Auto-save keranjang setiap kali cartItems atau sellerName berubah
   useEffect(() => {
@@ -174,11 +182,13 @@ export function KasirPos({
   const changeAmount = cashGiven > totalBillToPay ? cashGiven - totalBillToPay : 0;
   const underpaidAmount = cashGiven > 0 && cashGiven < totalBillToPay ? totalBillToPay - cashGiven : 0;
 
-  const handleAddItemToCart = () => {
+  const handleAddItemToCart = useCallback(() => {
     if (netWeight <= 0 || !activeProduct) return;
 
+    const now = Date.now();
+    const rand = Math.random().toString(36).slice(2, 6);
     const newItem: ScaleTransactionItem = {
-      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `item-${now}-${rand}`,
       transactionId: '',
       productId: activeProduct.id,
       productName: currentProductName,
@@ -193,23 +203,33 @@ export function KasirPos({
     setCartItems((prev) => [...prev, newItem]);
     resetTare();
     setRefactionValue(0);
-  };
+  }, [
+    netWeight,
+    activeProduct,
+    currentProductName,
+    grossWeight,
+    refactionType,
+    refactionValue,
+    unitPrice,
+    currentItemSubtotal,
+    resetTare,
+  ]);
 
-  const handleRemoveItem = (id: string) => {
+  const handleRemoveItem = useCallback((id: string) => {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
-  };
+  }, []);
 
-  const handleCompleteTransaction = () => {
+  const handleCompleteTransaction = useCallback(() => {
     if (cartItems.length === 0) return;
 
     const requiresApproval = totalBillToPay > 10000000;
     const finalSeller = isCustomSeller ? customSellerName.trim() || 'Penjual Umum' : sellerName;
 
+    const now = Date.now();
+    const randNum = Math.floor(1000 + Math.random() * 9000);
     const newTx: ScaleTransaction = {
-      id: `tx-${Date.now()}`,
-      invoiceNumber: `NOTA/${new Date().toISOString().slice(0, 10).replace(/-/g, '')}/G${warehouseId}/${Math.floor(
-        1000 + Math.random() * 9000
-      )}`,
+      id: `tx-${now}`,
+      invoiceNumber: `NOTA/${new Date(now).toISOString().slice(0, 10).replace(/-/g, '')}/G${warehouseId}/${randNum}`,
       warehouseId,
       cashierId: activeShift?.cashierId || 'Kasir Gudang',
       shiftId: activeShift?.id || 'shift-active-01',
@@ -243,7 +263,20 @@ export function KasirPos({
 
     setCartItems([]);
     setCashGiven(0);
-  };
+  }, [
+    cartItems,
+    totalBillToPay,
+    isCustomSeller,
+    customSellerName,
+    sellerName,
+    warehouseId,
+    activeShift,
+    isPartner,
+    onSaveTransaction,
+    warehouseName,
+    warning,
+    success,
+  ]);
 
   const handleReprintReceipt = (tx: ScaleTransaction) => {
     const receiptText = buildThermalReceiptESC(tx, warehouseName);
@@ -255,180 +288,173 @@ export function KasirPos({
     <div className="space-y-4 font-sans">
       {/* Banner Pemulihan Mati Listrik / Crash Recovery */}
       {recoveredDraftFound && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-sm text-slate-900 animate-in fade-in">
+        <Card className="flex flex-col sm:flex-row items-center justify-between gap-3 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700/60 p-4 shadow-sm text-slate-900 dark:text-zinc-100 animate-in fade-in">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-amber-200 p-2 text-amber-900">
+            <div className="rounded-xl bg-amber-200 dark:bg-amber-900/60 p-2 text-amber-900 dark:text-amber-200">
               <History className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xs font-black text-amber-950 uppercase tracking-tight">
+              <div className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-tight">
                 Draft Transaksi Ditemukan (Proteksi Mati Listrik)
               </div>
-              <div className="text-[11px] text-amber-800 font-medium">
+              <div className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
                 Ada nota timbangan yang belum diselesaikan sebelum browser tertutup atau mati lampu.
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleRestoreDraft}
-              className="flex-1 sm:flex-none rounded-xl bg-emerald-800 hover:bg-emerald-900 px-3.5 py-1.5 text-xs font-black text-white shadow-xs transition-all"
+              className="flex-1 sm:flex-none font-black"
             >
               Pulihkan Nota
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleDiscardDraft}
-              className="flex-1 sm:flex-none rounded-xl bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 transition-all"
+              className="flex-1 sm:flex-none"
             >
               Buang
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Tab Switcher Kasir: Input Timbangan vs Riwayat Transaksi */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-2.5 shadow-xs transition-colors">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setPosTab('pos')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-              posTab === 'pos'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
-            }`}
-          >
-            <Scale className="h-4 w-4" />
-            <span>Kasir Timbangan & Input Nota</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setPosTab('history')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-              posTab === 'history'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
-            }`}
-          >
-            <History className="h-4 w-4" />
-            <span>Riwayat Transaksi Kasir</span>
-            <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-              {warehouseTransactions.length + warehouseSales.length}
-            </span>
-          </button>
-        </div>
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-2.5 shadow-xs transition-colors">
+        <ChoiceGroup
+          value={posTab}
+          onChange={(val) => setPosTab(val as 'pos' | 'history')}
+          options={[
+            {
+              value: 'pos',
+              label: 'Kasir Timbangan & Input Nota',
+              icon: <Scale className="h-4 w-4" />,
+            },
+            {
+              value: 'history',
+              label: 'Riwayat Transaksi Kasir',
+              icon: <History className="h-4 w-4" />,
+              badge: String(warehouseTransactions.length + warehouseSales.length),
+            },
+          ]}
+        />
 
         <div className="text-right text-xs font-bold text-slate-500 dark:text-zinc-400 px-2 flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>{warehouseName}</span>
         </div>
-      </div>
+      </Card>
 
       {posTab === 'pos' ? (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Kolom Kiri: Layar Timbangan Digital & Input */}
         <div className="space-y-5 lg:col-span-7">
           {/* Timbangan Box */}
-          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-xs transition-colors">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800 pb-3">
-            <div className="flex items-center gap-2">
-              <Scale className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
-              <span className="text-sm font-black text-slate-900 dark:text-zinc-100 tracking-tight">TIMBANGAN DIGITAL (ALEXA BFS)</span>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                  isMock
-                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60'
-                    : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60'
-                }`}
-              >
-                {isMock ? 'Simulasi Virtual' : 'Serial Port RS-232'}
-              </span>
+          <Card className="p-5">
+            <CardHeader className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <Scale className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
+                <CardTitle className="text-sm font-black text-slate-900 dark:text-zinc-100 tracking-tight">TIMBANGAN DIGITAL (ALEXA BFS)</CardTitle>
+                <Badge variant={isConnected && !isMock ? 'emerald' : 'amber'}>
+                  {isConnected && !isMock ? 'Serial Port RS-232' : isMock ? 'Simulasi Virtual' : 'Input Manual (Kabel Belum Terhubung)'}
+                </Badge>
+              </div>
+
+              <div>
+                {isConnected && !isMock ? (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={disconnectHardware}
+                  >
+                    Putus Koneksi
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={connectHardware}
+                  >
+                    Hubungkan Port Kabel
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+
+            {/* Big Digital Scale Display - Modern Charcoal / Emerald Minimalist */}
+            <div className="my-4 flex flex-col items-center justify-center rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-[#EDF2E8]/60 dark:bg-[#070b14] py-7 px-4 text-slate-900 dark:text-zinc-100 shadow-xs transition-colors">
+              <div className="text-[10px] uppercase tracking-widest font-black text-emerald-800 dark:text-emerald-400 mb-2 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse"></span>
+                <span>Layar Berat Digital</span>
+              </div>
+              <div className="flex items-baseline justify-center gap-2">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={currentWeight === 0 ? '' : currentWeight}
+                  placeholder="0.00"
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setSimulatedWeight(isNaN(val) ? 0 : Math.max(0, val));
+                  }}
+                  className="font-numeric text-6xl sm:text-7xl font-black tracking-tight text-slate-900 dark:text-white text-center bg-transparent border-b-2 border-dashed border-emerald-700/40 dark:border-emerald-500/40 focus:border-emerald-700 focus:outline-none w-72 max-w-full"
+                  title="Ketik berat timbangan dinamis di sini"
+                />
+                <span className="text-2xl font-black text-amber-600 dark:text-amber-400">KG</span>
+              </div>
+              <div className="mt-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                <Badge variant={isConnected && !isMock ? 'emerald' : 'amber'}>
+                  {isConnected && !isMock ? 'Live Stream' : 'Manual'}
+                </Badge>
+                <span>{portInfo || 'Ketik berat langsung atau gunakan tombol tare / slider'}</span>
+              </div>
             </div>
 
-            <div>
-              {isMock ? (
-                <button
-                  onClick={connectHardware}
-                  className="rounded-lg bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800"
-                >
-                  Hubungkan Port Kabel
-                </button>
-              ) : (
-                <button
-                  onClick={disconnectHardware}
-                  className="rounded-lg bg-red-100 dark:bg-rose-950/80 border border-red-300 dark:border-rose-900/60 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-rose-300 hover:bg-red-200 dark:hover:bg-rose-900"
-                >
-                  Putus Koneksi
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Big Digital Scale Display - Input Dinamis & Real-time Stream */}
-          <div className="my-5 flex flex-col items-center justify-center rounded-xl border border-slate-300 dark:border-zinc-800 bg-gradient-to-b from-slate-50 to-emerald-50/40 dark:from-black dark:to-black dark:bg-black py-5 text-slate-900 dark:text-zinc-100 shadow-inner transition-colors">
-            <div className="text-[11px] uppercase tracking-widest font-black text-slate-500 dark:text-zinc-400 mb-1">
-              Berat Timbangan (Ketik Dinamis / Auto-Stream)
-            </div>
-            <div className="flex items-center justify-center gap-2">
+            {/* Kontrol Cepat Berat & Slider */}
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0b1220] p-4 space-y-3 transition-colors">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
+                <span>Preset &amp; Slider Penyesuaian Berat</span>
+                <span className="font-numeric font-black text-emerald-800 dark:text-emerald-400">{currentWeight.toFixed(2)} Kg</span>
+              </div>
               <input
-                type="number"
-                step="0.01"
+                type="range"
                 min="0"
-                value={currentWeight === 0 ? '' : currentWeight}
-                placeholder="0.00"
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setSimulatedWeight(isNaN(val) ? 0 : Math.max(0, val));
-                }}
-                className="font-numeric text-6xl font-black tracking-tight text-emerald-900 dark:text-emerald-400 text-center bg-transparent border-b-2 border-dashed border-emerald-400 dark:border-emerald-600 focus:border-emerald-700 focus:outline-none w-64 max-w-full"
-                title="Ketik berat timbangan dinamis di sini"
+                max="500"
+                step="0.5"
+                value={currentWeight}
+                onChange={(e) => setSimulatedWeight(parseFloat(e.target.value))}
+                className="w-full accent-emerald-800 dark:accent-emerald-500 cursor-pointer"
               />
-              <span className="text-2xl font-black text-amber-700 dark:text-amber-400">KG</span>
-            </div>
-            <div className="mt-2 text-[11px] font-semibold text-slate-500 dark:text-zinc-400 flex items-center gap-2">
-              <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800/60">Ketik Dinamis</span>
-              <span>{portInfo || 'Ketik langsung angka berat atau gunakan tombol cepat / slider'}</span>
-            </div>
-          </div>
-
-          {/* Kontrol Cepat Berat & Slider */}
-          <div className="rounded-xl border border-amber-200 dark:border-zinc-800 bg-amber-50/60 dark:bg-black p-3.5 space-y-2 transition-colors">
-            <div className="flex items-center justify-between text-xs font-bold text-amber-950 dark:text-amber-400">
-              <span>Pengaturan Cepat Berat Timbangan</span>
-              <span className="font-numeric">{currentWeight.toFixed(2)} Kg</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="500"
-              step="0.5"
-              value={currentWeight}
-              onChange={(e) => setSimulatedWeight(parseFloat(e.target.value))}
-              className="w-full accent-emerald-800 cursor-pointer"
-            />
-            <div className="flex flex-wrap gap-1.5 items-center">
-              {[5, 12.5, 25, 50, 100, 250].map((w) => (
-                <button
-                  key={w}
-                  type="button"
-                  onClick={() => setSimulatedWeight(w)}
-                  className="rounded bg-white dark:bg-black border border-amber-300 dark:border-zinc-800 px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-zinc-200 hover:bg-amber-100 dark:hover:bg-zinc-900"
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {[5, 12.5, 25, 50, 100, 250].map((w) => (
+                  <Button
+                    key={w}
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSimulatedWeight(w)}
+                    className="font-numeric text-xs font-bold"
+                  >
+                    +{w}kg
+                  </Button>
+                ))}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={resetTare}
+                  className="ml-auto font-bold text-amber-600 dark:text-amber-400"
                 >
-                  +{w}kg
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={resetTare}
-                className="flex items-center gap-1 rounded bg-slate-900 dark:bg-zinc-900 border border-slate-800 dark:border-zinc-700 px-3 py-1 text-xs text-amber-300 hover:bg-slate-800 dark:hover:bg-zinc-800 font-bold ml-auto shadow-xs"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Nol-kan / Tare (0 Kg)
-              </button>
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Tare (0 Kg)
+                </Button>
+              </div>
             </div>
-          </div>
 
           {/* Form Input Detail Transaksi */}
           <div className="mt-5 space-y-4">
@@ -447,70 +473,54 @@ export function KasirPos({
                 </div>
 
                 {isCustomSeller ? (
-                  <input
+                  <Input
                     type="text"
                     value={customSellerName}
                     onChange={(e) => setCustomSellerName(e.target.value)}
                     placeholder="Ketik nama penjual bebas..."
-                    className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                     autoFocus
                   />
                 ) : (
-                  <select
+                  <Select
                     value={sellerName}
                     onChange={(e) => setSellerName(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700 cursor-pointer"
-                  >
-                    {defaultSellers.map((s) => (
-                      <option key={s} value={s} className="bg-white dark:bg-black text-slate-900 dark:text-zinc-100">
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                    options={defaultSellers.map((s) => ({ value: s, label: s }))}
+                  />
                 )}
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">Kategori Harga Mitra</label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsPartner(true)}
-                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-bold border transition-all cursor-pointer ${
-                      isPartner
-                        ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs'
-                        : 'bg-white dark:bg-black text-slate-600 dark:text-zinc-400 border-slate-300 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900'
-                    }`}
-                  >
-                    <UserCheck className="h-3.5 w-3.5" />
-                    Langganan (VIP)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsPartner(false)}
-                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-bold border transition-all cursor-pointer ${
-                      !isPartner
-                        ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
-                        : 'bg-white dark:bg-black text-slate-600 dark:text-zinc-400 border-slate-300 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900'
-                    }`}
-                  >
-                    <UserX className="h-3.5 w-3.5" />
-                    Umum / Eceran
-                  </button>
-                </div>
+                <ChoiceGroup
+                  fullWidth
+                  value={isPartner ? 'langganan' : 'umum'}
+                  onChange={(val) => setIsPartner(val === 'langganan')}
+                  options={[
+                    {
+                      value: 'langganan',
+                      label: 'Langganan (VIP)',
+                      icon: <UserCheck className="h-3.5 w-3.5" />,
+                    },
+                    {
+                      value: 'umum',
+                      label: 'Umum / Eceran',
+                      icon: <UserX className="h-3.5 w-3.5" />,
+                    },
+                  ]}
+                />
               </div>
             </div>
 
             {/* Komoditas dengan Pilihan Grid Cepat (Dikelola Khusus Oleh Owner) */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Pilih Komoditas Logam / Rongsok</label>
-                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-400">
-                  {activeProduct?.name || 'Belum dipilih'}
-                </span>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">Pilih Komoditas</label>
+                {activeProduct && (
+                  <Badge variant="emerald">{activeProduct.name} Terpilih</Badge>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-h-52 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 {products.map((p) => {
                   const price = isPartner ? p.pricePartner : p.priceRegular;
                   const isSelected = p.id === selectedProductId;
@@ -519,18 +529,34 @@ export function KasirPos({
                       key={p.id}
                       type="button"
                       onClick={() => setSelectedProductId(p.id)}
-                      className={`rounded-xl p-2.5 text-left border transition-all cursor-pointer ${
+                      className={`group rounded-2xl p-3 text-left border transition-all cursor-pointer relative ${
                         isSelected
-                          ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-700 shadow-xs ring-1 ring-emerald-600'
-                          : 'bg-white dark:bg-black border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900/50'
+                          ? 'bg-emerald-800 text-white border-emerald-900 shadow-md scale-[1.01]'
+                          : 'bg-[#EDF2E8]/60 dark:bg-[#0b1220] border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-emerald-700/50'
                       }`}
                     >
-                      <div className="text-xs font-extrabold text-slate-900 dark:text-zinc-100 truncate">{p.name}</div>
-                      <div className="mt-1 flex items-baseline justify-between text-[11px]">
-                        <span className="text-slate-500 dark:text-zinc-400 font-medium">{p.category.replace('_', ' ')}</span>
-                        <span className="font-numeric font-black text-emerald-800 dark:text-emerald-400">
-                          Rp{price.toLocaleString('id-ID')}/kg
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
+                          isSelected
+                            ? 'bg-emerald-950/40 text-emerald-200'
+                            : 'bg-slate-200/80 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                        }`}>
+                          {p.category.replace('_', ' ')}
                         </span>
+                        {isSelected && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        )}
+                      </div>
+                      <div className={`text-xs font-black truncate ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+                        {p.name}
+                      </div>
+                      <div className="mt-2 text-right">
+                        <span className={`font-numeric text-xs font-black ${
+                          isSelected ? 'text-amber-300' : 'text-emerald-800 dark:text-emerald-400'
+                        }`}>
+                          Rp{price.toLocaleString('id-ID')}
+                        </span>
+                        <span className={`text-[10px] ml-0.5 ${isSelected ? 'text-emerald-200' : 'text-slate-400'}`}>/kg</span>
                       </div>
                     </button>
                   );
@@ -539,40 +565,29 @@ export function KasirPos({
             </div>
 
             {/* Potongan Kotoran (Refaksi) */}
-            <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-3.5 transition-colors">
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-[#EDF2E8]/60 dark:bg-[#0f172a]/40 p-4 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-slate-700 dark:text-zinc-300">Potongan Kotoran (Refaksi)</span>
-                <div className="flex gap-1 bg-white dark:bg-black p-0.5 rounded-lg border border-slate-200 dark:border-zinc-800">
-                  <button
-                    type="button"
-                    onClick={() => setRefactionType('kg')}
-                    className={`rounded px-2.5 py-0.5 text-xs font-bold transition-all cursor-pointer ${
-                      refactionType === 'kg' ? 'bg-emerald-800 text-white' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
-                    }`}
-                  >
-                    Potong Kg
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRefactionType('pct')}
-                    className={`rounded px-2.5 py-0.5 text-xs font-bold transition-all cursor-pointer ${
-                      refactionType === 'pct' ? 'bg-emerald-800 text-white' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
-                    }`}
-                  >
-                    Potong %
-                  </button>
-                </div>
+                <ChoiceGroup
+                  size="sm"
+                  value={refactionType}
+                  onChange={(val) => setRefactionType(val as 'kg' | 'pct')}
+                  options={[
+                    { value: 'kg', label: 'Potong Kg' },
+                    { value: 'pct', label: 'Potong %' },
+                  ]}
+                />
               </div>
 
               <div className="flex items-center gap-3">
-                <input
+                <Input
                   type="number"
                   min="0"
                   step="0.1"
                   value={refactionValue || ''}
                   onChange={(e) => setRefactionValue(parseFloat(e.target.value) || 0)}
                   placeholder={`Nilai potongan dalam ${refactionType.toUpperCase()}`}
-                  className="flex-1 rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-xs font-bold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="flex-1"
                 />
                 <div className="text-right text-xs text-slate-600 dark:text-zinc-400">
                   <span>Netto: </span>
@@ -582,48 +597,47 @@ export function KasirPos({
             </div>
 
             {/* Action Button: Masukkan ke Nota Multi-Item */}
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="lg"
               onClick={handleAddItemToCart}
               disabled={netWeight <= 0}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 py-3.5 text-sm font-extrabold text-white shadow-md shadow-emerald-950/20 hover:bg-emerald-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="w-full"
             >
               <Plus className="h-4 w-4" />
               Masukkan ke Nota (Subtotal: Rp{currentItemSubtotal.toLocaleString('id-ID')})
-            </button>
+            </Button>
           </div>
+          </Card>
         </div>
-      </div>
 
       {/* Kolom Kanan: Keranjang Nota & Estimasi Uang Kasir */}
       <div className="space-y-5 lg:col-span-5">
-        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm transition-colors">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
+        <Card className="p-5">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-800 dark:text-emerald-400" />
-              <h2 className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">KERANJANG TIMBANGAN (NOTA)</h2>
+              <CardTitle className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">KERANJANG TIMBANGAN (NOTA)</CardTitle>
             </div>
-            <span className="text-xs font-bold text-slate-500 dark:text-zinc-400">{cartItems.length} Item</span>
+            <Badge variant="emerald">{cartItems.length} Item</Badge>
           </div>
 
           {/* List Barang di Nota */}
           <div className="my-3 max-h-56 space-y-2 overflow-y-auto pr-1">
             {cartItems.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
-                Belum ada barang di nota. Timbang dan klik 'Masukkan ke Nota'.
+                Belum ada barang di nota. Timbang dan klik &apos;Masukkan ke Nota&apos;.
               </div>
             ) : (
               cartItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-3 text-xs transition-colors"
+                  className="flex items-center justify-between rounded-xl border border-slate-200/80 dark:border-slate-800 bg-[#EDF2E8]/40 dark:bg-[#0f172a]/40 p-3 text-xs transition-colors"
                 >
                   <div className="flex-1 pr-2">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-900 dark:text-zinc-100">{item.productName}</span>
-                      <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.2 text-[9px] font-bold border border-emerald-200 dark:border-emerald-800">
-                        +{item.netWeightKg} Kg Siap Jual
-                      </span>
+                      <Badge variant="emerald">+{item.netWeightKg} Kg Siap Jual</Badge>
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-numeric mt-0.5">
                       {item.netWeightKg} Kg × Rp{item.pricePerKg.toLocaleString('id-ID')}
@@ -637,7 +651,7 @@ export function KasirPos({
                     </div>
                     <button
                       onClick={() => handleRemoveItem(item.id)}
-                      className="mt-1 text-[11px] font-bold text-red-600 dark:text-rose-400 hover:text-red-700 dark:hover:text-rose-300"
+                      className="mt-1 text-[11px] font-bold text-red-600 dark:text-rose-400 hover:text-red-700 dark:hover:text-rose-300 cursor-pointer"
                     >
                       Hapus
                     </button>
@@ -648,7 +662,7 @@ export function KasirPos({
           </div>
 
           {/* Total Tagihan Timbangan (Kas Keluar) */}
-          <div className="border-t border-slate-100 dark:border-zinc-800 pt-3">
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
             <div className="flex items-center justify-between text-xs text-slate-600 dark:text-zinc-400">
               <span className="font-semibold">Total Biaya Belanja (Uang Keluar):</span>
               <span className="font-numeric text-xl font-black text-amber-700 dark:text-amber-400">
@@ -658,7 +672,7 @@ export function KasirPos({
           </div>
 
           {/* Estimasi Kasir Uang Masuk / Pembayaran & Kembalian */}
-          <div className="mt-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-4 space-y-3 transition-colors">
+          <div className="mt-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-[#EDF2E8]/50 dark:bg-[#0f172a]/50 p-4 space-y-3 transition-colors">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-zinc-100">
               <Banknote className="h-4 w-4 text-emerald-800 dark:text-emerald-400" />
               <span>Estimasi Uang Diserahkan & Kembalian</span>
@@ -668,18 +682,18 @@ export function KasirPos({
               <label className="block text-[11px] font-bold text-slate-600 dark:text-zinc-400 mb-1">
                 Uang Tunai Diserahkan Kasir ke Penjual (Rp):
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 step="1000"
                 value={cashGiven || ''}
                 onChange={(e) => setCashGiven(parseFloat(e.target.value) || 0)}
                 placeholder={`Contoh: Rp${totalBillToPay}`}
-                className="w-full rounded-lg border border-slate-300 dark:border-zinc-800 bg-white dark:bg-black px-3 py-2 text-sm font-numeric font-black text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                className="font-numeric font-black text-sm"
               />
 
               {/* Quick Cash Buttons */}
-              <div className="mt-2 flex flex-wrap gap-1">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {[
                   totalBillToPay,
                   Math.ceil(totalBillToPay / 50000) * 50000,
@@ -687,19 +701,21 @@ export function KasirPos({
                 ]
                   .filter((v, i, a) => v > 0 && a.indexOf(v) === i)
                   .map((val) => (
-                    <button
+                    <Button
                       key={val}
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setCashGiven(val)}
-                      className="rounded bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 font-numeric cursor-pointer transition-colors"
+                      className="font-numeric text-[11px] py-0.5 px-2 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100"
                     >
                       Rp{val.toLocaleString('id-ID')}
-                    </button>
+                    </Button>
                   ))}
               </div>
             </div>
 
             {/* Status Kembalian & Kurang Bayar */}
-            <div className="space-y-1 border-t border-slate-200 dark:border-zinc-800 pt-2 text-xs">
+            <div className="space-y-1 border-t border-slate-200/80 dark:border-slate-800 pt-2 text-xs">
               <div className="flex items-center justify-between text-slate-700 dark:text-zinc-300">
                 <span className="font-semibold">Kembalian dari Penjual:</span>
                 <span className="font-numeric font-bold text-emerald-700 dark:text-emerald-400">
@@ -718,19 +734,21 @@ export function KasirPos({
 
           {/* Selesaikan & Cetak Struk */}
           <div className="mt-4 space-y-2">
-            <button
+            <Button
+              variant="amber"
+              size="lg"
               onClick={handleCompleteTransaction}
               disabled={cartItems.length === 0}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-sm font-extrabold text-amber-300 shadow-md shadow-slate-900/30 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="w-full"
             >
               <Printer className="h-4 w-4" />
               Selesaikan Transaksi & Cetak Struk Thermal
-            </button>
+            </Button>
           </div>
 
           {/* Widget 3 Nota Timbangan Terakhir Kasir */}
           {warehouseTransactions.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-zinc-800 space-y-2">
+            <div className="mt-4 pt-4 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-zinc-300">
                 <div className="flex items-center gap-1.5">
                   <FileText className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
@@ -749,7 +767,7 @@ export function KasirPos({
                 {warehouseTransactions.slice(0, 3).map((tx) => (
                   <div
                     key={tx.id}
-                    className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black p-2.5 text-xs transition-colors"
+                    className="flex items-center justify-between rounded-xl border border-slate-200/80 dark:border-slate-800 bg-[#EDF2E8]/40 dark:bg-[#0f172a]/40 p-2.5 text-xs transition-colors"
                   >
                     <div className="truncate pr-2">
                       <div className="font-mono font-bold text-slate-900 dark:text-zinc-100 text-[11px] truncate">
@@ -763,21 +781,22 @@ export function KasirPos({
                       <span className="font-numeric font-black text-amber-700 dark:text-amber-400 text-xs">
                         Rp{tx.totalAmount.toLocaleString('id-ID')}
                       </span>
-                      <button
-                        type="button"
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => handleReprintReceipt(tx)}
                         title="Cetak Ulang Struk Thermal"
-                        className="rounded-lg bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 p-1.5 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 cursor-pointer"
+                        className="px-2 py-1"
                       >
                         <Printer className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   ) : (
@@ -785,100 +804,63 @@ export function KasirPos({
     <div className="space-y-4">
       {/* Header Ringkasan Kas Kasir Hari Ini */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-black p-4 space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-amber-900 dark:text-amber-400">
-            <span className="flex items-center gap-1.5">
-              <ArrowDownLeft className="h-4 w-4 text-amber-700" />
-              Total Pembelian Timbangan
-            </span>
-            <span className="font-numeric font-black">{warehouseTransactions.length} Nota</span>
-          </div>
-          <div className="font-numeric text-xl font-black text-amber-900 dark:text-amber-300">
-            Rp{warehouseTransactions.reduce((acc, t) => acc + t.totalAmount, 0).toLocaleString('id-ID')}
-          </div>
-          <p className="text-[10px] text-amber-800/80 dark:text-zinc-500 font-medium">
-            Kas keluar belanja rongsok dari pengepul & mitra
-          </p>
-        </div>
+        <StatCard
+          title="Total Pembelian Timbangan"
+          value={`Rp${warehouseTransactions.reduce((acc, t) => acc + t.totalAmount, 0).toLocaleString('id-ID')}`}
+          subtitle="Kas keluar belanja rongsok dari pengepul"
+          icon={ArrowDownLeft}
+          variant="amber"
+          trend={{ value: `${warehouseTransactions.length} Nota`, isPositive: false }}
+        />
 
-        <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-black p-4 space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-emerald-900 dark:text-emerald-400">
-            <span className="flex items-center gap-1.5">
-              <ArrowUpRight className="h-4 w-4 text-emerald-700" />
-              Total Penjualan Stok
-            </span>
-            <span className="font-numeric font-black">{warehouseSales.length} Nota</span>
-          </div>
-          <div className="font-numeric text-xl font-black text-emerald-900 dark:text-emerald-300">
-            Rp{warehouseSales.reduce((acc, s) => acc + s.totalRevenue, 0).toLocaleString('id-ID')}
-          </div>
-          <p className="text-[10px] text-emerald-800/80 dark:text-zinc-500 font-medium">
-            Kas masuk penjualan ke pabrik & pembeli eceran
-          </p>
-        </div>
+        <StatCard
+          title="Total Penjualan Stok"
+          value={`Rp${warehouseSales.reduce((acc, s) => acc + s.totalRevenue, 0).toLocaleString('id-ID')}`}
+          subtitle="Kas masuk penjualan ke pabrik & pembeli eceran"
+          icon={ArrowUpRight}
+          variant="emerald"
+          trend={{ value: `${warehouseSales.length} Nota`, isPositive: true }}
+        />
 
-        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-4 space-y-1 sm:col-span-2 lg:col-span-1">
-          <div className="text-xs font-bold text-slate-700 dark:text-zinc-300 flex items-center justify-between">
-            <span>Aktivitas Gudang</span>
-            <span className="rounded-full bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-400">
-              {warehouseName}
-            </span>
-          </div>
-          <div className="font-numeric text-xl font-black text-slate-900 dark:text-zinc-100">
-            {warehouseTransactions.length + warehouseSales.length} Transaksi
-          </div>
-          <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">
-            Tersimpan aman & tersinkronisasi Supabase Cloud
-          </p>
-        </div>
+        <StatCard
+          title="Aktivitas Gudang"
+          value={`${warehouseTransactions.length + warehouseSales.length} Transaksi`}
+          subtitle={warehouseName}
+          variant="slate"
+        />
       </div>
 
       {/* Filter Tab & Pencarian */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-3.5 shadow-xs transition-colors">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setHistoryTab('all')}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-              historyTab === 'all'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
-            }`}
-          >
-            Semua ({warehouseTransactions.length + warehouseSales.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setHistoryTab('pembelian')}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-              historyTab === 'pembelian'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
-            }`}
-          >
-            Pembelian Timbangan ({warehouseTransactions.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setHistoryTab('penjualan')}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-              historyTab === 'penjualan'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900'
-            }`}
-          >
-            Penjualan Stok ({warehouseSales.length})
-          </button>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0b1220] p-3.5 shadow-xs transition-colors">
+        <ChoiceGroup
+          size="sm"
+          value={historyTab}
+          onChange={(val) => setHistoryTab(val as 'all' | 'pembelian' | 'penjualan')}
+          options={[
+            {
+              value: 'all',
+              label: 'Semua',
+              badge: String(warehouseTransactions.length + warehouseSales.length),
+            },
+            {
+              value: 'pembelian',
+              label: 'Pembelian Timbangan',
+              badge: String(warehouseTransactions.length),
+            },
+            {
+              value: 'penjualan',
+              label: 'Penjualan Stok',
+              badge: String(warehouseSales.length),
+            },
+          ]}
+        />
 
         <div className="relative min-w-[220px]">
-          <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
+          <Input
+            icon={<Search className="h-3.5 w-3.5" />}
             value={searchHistory}
             onChange={(e) => setSearchHistory(e.target.value)}
             placeholder="Cari nota / nama..."
-            className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-black pl-8 pr-3 py-1.5 text-xs font-medium text-slate-900 dark:text-zinc-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
           />
         </div>
       </div>
@@ -887,17 +869,17 @@ export function KasirPos({
       <div className="space-y-3">
         {/* Riwayat Pembelian Timbangan */}
         {(historyTab === 'all' || historyTab === 'pembelian') && (
-          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-4 space-y-3 transition-colors">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2.5">
+          <Card className="p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
                 <ArrowDownLeft className="h-4 w-4 text-amber-700 dark:text-amber-400" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
+                <CardTitle className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
                   Riwayat Pembelian Timbangan Masuk
-                </h3>
+                </CardTitle>
               </div>
-              <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 font-numeric">
+              <Badge variant="amber">
                 {warehouseTransactions.length} Nota
-              </span>
+              </Badge>
             </div>
 
             {warehouseTransactions.length === 0 ? (
@@ -921,32 +903,20 @@ export function KasirPos({
                     return (
                       <div
                         key={tx.id}
-                        className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-black p-3.5 space-y-2 transition-colors"
+                        className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-[#EDF2E8]/40 dark:bg-[#0f172a]/40 p-3.5 space-y-2 transition-colors"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-xs text-slate-900 dark:text-zinc-100">
                               {tx.invoiceNumber}
                             </span>
-                            <span
-                              className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
-                                tx.isPartner
-                                  ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                                  : 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
-                              }`}
-                            >
+                            <Badge variant={tx.isPartner ? 'emerald' : 'amber'}>
                               {tx.isPartner ? 'MITRA / VIP' : 'UMUM'}
-                            </span>
+                            </Badge>
                             {tx.requiresOwnerApproval && (
-                              <span
-                                className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
-                                  tx.isApprovedByOwner
-                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                    : 'bg-rose-100 text-rose-800 border-rose-300'
-                                }`}
-                              >
+                              <Badge variant={tx.isApprovedByOwner ? 'emerald' : 'rose'}>
                                 {tx.isApprovedByOwner ? 'JUMBO APPROVED' : 'JUMBO PENDING'}
-                              </span>
+                              </Badge>
                             )}
                           </div>
 
@@ -955,23 +925,24 @@ export function KasirPos({
                               {new Date(tx.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}{' '}
                               {new Date(tx.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
                             </span>
-                            <button
-                              type="button"
+                            <Button
+                              variant="secondary"
+                              size="sm"
                               onClick={() => handleReprintReceipt(tx)}
-                              className="flex items-center gap-1 rounded-lg bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 cursor-pointer shadow-xs"
                               title="Cetak Ulang Struk Thermal"
                             >
                               <Printer className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
-                              <span>Cetak Ulang</span>
-                            </button>
-                            <button
-                              type="button"
+                              <span>Cetak</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
-                              className="rounded-lg bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 p-1 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 cursor-pointer"
                               title={isExpanded ? 'Tutup Rincian' : 'Lihat Rincian Barang'}
+                              className="p-1.5"
                             >
                               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                            </button>
+                            </Button>
                           </div>
                         </div>
 
@@ -988,11 +959,11 @@ export function KasirPos({
 
                         {/* Rincian Komoditas (Expandable) */}
                         {isExpanded && (
-                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-zinc-800 space-y-1.5 text-xs">
+                          <div className="mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800 space-y-1.5 text-xs">
                             <div className="text-[11px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-tight">
                               Rincian Barang yang Ditimbang:
                             </div>
-                            <div className="divide-y divide-slate-200/60 dark:divide-zinc-800/80">
+                            <div className="divide-y divide-slate-200/60 dark:divide-slate-800/80">
                               {tx.items.map((item, idx) => (
                                 <div key={item.id || idx} className="py-1.5 flex items-center justify-between text-[11px]">
                                   <div>
@@ -1016,22 +987,22 @@ export function KasirPos({
                   })}
               </div>
             )}
-          </div>
+          </Card>
         )}
 
         {/* Riwayat Penjualan Stok Gudang */}
         {(historyTab === 'all' || historyTab === 'penjualan') && (
-          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-4 space-y-3 transition-colors">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2.5">
+          <Card className="p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
                 <ArrowUpRight className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
+                <CardTitle className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
                   Riwayat Penjualan Stok Gudang (Kas Masuk)
-                </h3>
+                </CardTitle>
               </div>
-              <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 font-numeric">
+              <Badge variant="emerald">
                 {warehouseSales.length} Nota
-              </span>
+              </Badge>
             </div>
 
             {warehouseSales.length === 0 ? (
@@ -1053,25 +1024,19 @@ export function KasirPos({
                   .map((sale) => (
                     <div
                       key={sale.id}
-                      className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-black p-3.5 space-y-2 transition-colors"
+                      className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-[#EDF2E8]/40 dark:bg-[#0f172a]/40 p-3.5 space-y-2 transition-colors"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold text-xs text-slate-900 dark:text-zinc-100">
                             {sale.invoiceNumber}
                           </span>
-                          <span
-                            className={`rounded px-2 py-0.5 text-[10px] font-bold border ${
-                              sale.paymentMethod === 'CASH_LACI'
-                                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                                : 'bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-300 border-slate-300 dark:border-zinc-700'
-                            }`}
-                          >
+                          <Badge variant={sale.paymentMethod === 'CASH_LACI' ? 'emerald' : 'blue'}>
                             {sale.paymentMethod === 'CASH_LACI' ? 'KAS TUNAI LACI' : 'TRANSFER BANK'}
-                          </span>
-                          <span className="rounded px-2 py-0.5 text-[10px] font-medium bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800">
+                          </Badge>
+                          <Badge variant="slate">
                             {sale.buyerType === 'PELEBURAN_BESAR' ? 'Peleburan Tonase' : 'Pembeli Biasa'}
-                          </span>
+                          </Badge>
                         </div>
 
                         <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">
@@ -1095,7 +1060,7 @@ export function KasirPos({
                   ))}
               </div>
             )}
-          </div>
+          </Card>
         )}
       </div>
     </div>
