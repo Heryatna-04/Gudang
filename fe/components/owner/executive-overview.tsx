@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Product, ScaleTransaction, FactorySale, UserRole } from '../../types';
+import { InteractiveCalendar } from '../ui/interactive-calendar';
 
 interface ExecutiveDashboardOverviewProps {
   activeRole: UserRole;
@@ -413,34 +414,8 @@ export function ExecutiveDashboardOverview({
           <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-emerald-600/10 rounded-full blur-2xl pointer-events-none"></div>
         </div>
 
-        {/* Mini Kalender Eduplex Style */}
-        <div className={`p-5 rounded-2xl border transition-colors ${
-          isDark ? 'bg-[#0b1220] border-slate-800/80' : 'bg-white border-slate-200/80 shadow-xs'
-        }`}>
-          <div className="flex items-center justify-between mb-3.5">
-            <button className="text-slate-400 hover:text-slate-600"><ChevronLeft className="w-4 h-4" /></button>
-            <span className={`font-black text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>Oktober 2026</span>
-            <button className="text-slate-400 hover:text-slate-600"><ChevronRight className="w-4 h-4" /></button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-2">
-            <span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span>
-          </div>
-
-          <div className={`grid grid-cols-7 gap-1 text-center text-xs font-semibold ${
-            isDark ? 'text-slate-300' : 'text-slate-700'
-          }`}>
-            <span className="p-1.5 text-slate-500/40">28</span>
-            <span className="p-1.5 text-slate-500/40">29</span>
-            <span className="p-1.5 text-slate-500/40">30</span>
-            <span className="p-1.5">1</span><span className="p-1.5">2</span><span className="p-1.5">3</span><span className="p-1.5">4</span>
-            <span className="p-1.5">5</span><span className="p-1.5">6</span><span className="p-1.5">7</span><span className="p-1.5">8</span><span className="p-1.5">9</span><span className="p-1.5">10</span><span className="p-1.5">11</span>
-            <span className="p-1.5">12</span><span className="p-1.5">13</span><span className="p-1.5">14</span><span className="p-1.5">15</span><span className="p-1.5">16</span><span className="p-1.5">17</span>
-            {/* Active Date: Brand Emerald Accent */}
-            <span className="p-1.5 bg-emerald-800 text-white font-black rounded-full shadow-xs">18</span>
-            <span className="p-1.5">19</span><span className="p-1.5">20</span><span className="p-1.5">21</span><span className="p-1.5">22</span><span className="p-1.5">23</span><span className="p-1.5">24</span>
-          </div>
-        </div>
+        {/* Mini Kalender Interaktif */}
+        <InteractiveCalendar isDark={isDark} />
 
         {/* Jadwal Kirim Pabrik Peleburan */}
         <div className={`p-5 rounded-2xl border transition-colors ${
