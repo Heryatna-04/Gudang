@@ -776,6 +776,71 @@ export function OwnerDashboard({
         </div>
       </div>
 
+      {/* RINGKASAN KOMODITAS UTAMA & HARGA BENCHMARK */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className={`text-sm font-extrabold tracking-tight ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
+              RINGKASAN KOMODITAS UTAMA &amp; STOK GUDANG
+            </h3>
+            <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Monitoring harga pasar, stok terkumpul, dan marjin komoditas unggulan
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {products.slice(0, 3).map((prod) => {
+            const marginPerKg = prod.marketPriceBenchmark - prod.priceRegular;
+            return (
+              <div
+                key={prod.id}
+                className={`rounded-2xl border p-4.5 shadow-sm transition-all ${
+                  isDark ? 'border-slate-800 bg-[#0b1220]' : 'border-slate-200 bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-black uppercase tracking-wider ${isDark ? 'text-zinc-200' : 'text-slate-900'}`}>
+                    {prod.name}
+                  </span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    marginPerKg > 0
+                      ? isDark ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60' : 'bg-emerald-100 text-emerald-800'
+                      : isDark ? 'bg-amber-950/80 text-amber-400 border border-amber-800/60' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    Spread: +Rp{marginPerKg.toLocaleString('id-ID')}/kg
+                  </span>
+                </div>
+
+                <div className="mt-3 flex items-baseline justify-between">
+                  <div>
+                    <span className={`text-[10px] block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Beli Kasir</span>
+                    <span className={`text-base font-numeric font-black ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>
+                      Rp{prod.priceRegular.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-[10px] block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Benchmark Pabrik</span>
+                    <span className={`text-base font-numeric font-black text-amber-500`}>
+                      Rp{prod.marketPriceBenchmark.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`mt-3 pt-2.5 border-t flex items-center justify-between text-xs ${
+                  isDark ? 'border-slate-800/80 text-zinc-400' : 'border-slate-100 text-slate-500'
+                }`}>
+                  <span>Stok Siap Kirim:</span>
+                  <span className={`font-numeric font-black ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>
+                    {Number(prod.currentStockKg || 0).toLocaleString('id-ID')} kg
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* FINANCIAL METRIC CARDS - OMZET, KAS KELUAR, LABA KOTOR & LABA BERSIH */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. OMZET (TOTAL PENJUALAN STOK) */}
