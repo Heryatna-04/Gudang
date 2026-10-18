@@ -1018,10 +1018,10 @@ export default function Home() {
   }
 
   return (
-    <div className={`h-screen w-screen flex overflow-hidden font-sans antialiased transition-colors duration-200 ${
-      isDark ? 'dark bg-black text-zinc-100' : 'bg-slate-100 text-slate-900'
+    <div className={`min-h-screen w-full flex flex-col lg:flex-row p-4 md:p-6 gap-6 font-sans antialiased transition-colors duration-200 ${
+      isDark ? 'dark bg-[#050811] text-zinc-100' : 'bg-[#f1f5f3] text-slate-900'
     }`}>
-      {/* Sidebar Daylight & Dark Theme */}
+      {/* Sidebar Eduplex Curved Frame */}
       <Sidebar
         activeRole={activeRole}
         setActiveRole={setActiveRole}
@@ -1035,17 +1035,15 @@ export default function Home() {
       />
 
       {/* Main Content Area */}
-      <div className={`flex-1 h-screen flex flex-col min-w-0 overflow-hidden transition-colors duration-200 ${
-        isDark ? 'bg-black' : 'bg-slate-50/80'
-      }`}>
+      <div className={`flex-1 flex flex-col min-w-0 transition-colors duration-200`}>
         {/* Top Navbar Header */}
-        <header className={`h-14 backdrop-blur-md border-b px-6 flex items-center justify-between flex-shrink-0 z-20 shadow-2xs transition-colors duration-200 ${
-          isDark ? 'bg-black/90 border-zinc-800 text-zinc-100' : 'bg-white/95 border-slate-200 text-slate-800'
+        <header className={`h-16 px-6 rounded-2xl border mb-6 flex items-center justify-between flex-shrink-0 shadow-xs transition-colors duration-200 ${
+          isDark ? 'bg-[#0b1220] border-slate-800 text-zinc-100' : 'bg-white border-slate-200/80 text-slate-800'
         }`}>
           <div className="flex items-center space-x-2">
-            <span className={`text-xs font-medium ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Green Cycle Kuningan</span>
+            <span className={`text-xs font-bold ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Green Cycle Kuningan</span>
             <span className={`text-xs ${isDark ? 'text-zinc-700' : 'text-slate-300'}`}>/</span>
-            <span className={`text-sm font-semibold tracking-tight ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>{getTabTitle()}</span>
+            <span className={`text-sm font-black tracking-tight ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>{getTabTitle()}</span>
           </div>
 
           <div className="flex items-center space-x-3">
@@ -1135,7 +1133,7 @@ export default function Home() {
         </header>
 
         {/* Scrollable Page Viewport */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 overflow-y-auto w-full">
           {activeTab === 'dashboard' && (
             <ExecutiveDashboardOverview
               activeRole={activeRole}
