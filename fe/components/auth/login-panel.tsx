@@ -28,24 +28,43 @@ export function LoginPanel({ onLoginSuccess, isDark = false, onToggleTheme }: Lo
     const cleanPin = pin.trim();
 
     try {
-      // 1. Coba Autentikasi Dinamis Langsung ke Supabase
+      // 1. Coba Autentikasi Dinamis Langsung ke Supabase (RPC Aman)
       if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
-        const { data: dbAccount, error } = await supabase
-          .from('app_accounts')
-          .select('*')
-          .eq('username', cleanUser)
-          .eq('pin', cleanPin)
-          .eq('is_active', true)
-          .maybeSingle();
+        try {
+          const { data: rpcRes, error: rpcErr } = await supabase
+            .rpc('verify_app_account', { p_username: cleanUser, p_pin: cleanPin });
+          const verified = Array.isArray(rpcRes) ? rpcRes[0] : rpcRes;
 
-        if (dbAccount && !error) {
-          setIsLoading(false);
-          onLoginSuccess({
-            fullName: dbAccount.full_name,
-            role: dbAccount.role as UserRole,
-            username: dbAccount.username,
-          });
-          return;
+          if (verified && !rpcErr) {
+            setIsLoading(false);
+            onLoginSuccess({
+              fullName: verified.full_name,
+              role: verified.role as UserRole,
+              username: verified.username,
+            });
+            return;
+          }
+
+          // Fallback query tabel jika RPC belum dideploy di database
+          const { data: dbAccount, error } = await supabase
+            .from('app_accounts')
+            .select('id, username, full_name, role, is_active')
+            .eq('username', cleanUser)
+            .eq('pin', cleanPin)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (dbAccount && !error) {
+            setIsLoading(false);
+            onLoginSuccess({
+              fullName: dbAccount.full_name,
+              role: dbAccount.role as UserRole,
+              username: dbAccount.username,
+            });
+            return;
+          }
+        } catch (dbErr) {
+          console.warn('Gagal autentikasi Supabase Cloud:', dbErr);
         }
       }
 

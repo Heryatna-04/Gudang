@@ -25,6 +25,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Filter,
+  KeyRound,
 } from 'lucide-react';
 import {
   UserRole,
@@ -36,6 +37,7 @@ import {
   Product,
 } from '../../types';
 import { exportEnterpriseReportExcel } from '../../lib/export/excel-generator';
+import { UserAccountService } from '../../lib/auth/user-account-service';
 
 interface OwnerDashboardProps {
   activeRole: UserRole;
@@ -159,6 +161,41 @@ export function OwnerDashboard({
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [auditTab, setAuditTab] = useState<'pembelian' | 'penjualan'>('pembelian');
+
+  // State & Handlers Otorisasi PIN Approval Jumbo Transaksi
+  const [jumboTxToApprove, setJumboTxToApprove] = useState<ScaleTransaction | null>(null);
+  const [ownerPinInput, setOwnerPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string>('');
+  const [isVerifyingPin, setIsVerifyingPin] = useState<boolean>(false);
+
+  const handleOpenApprovalModal = (tx: ScaleTransaction) => {
+    setJumboTxToApprove(tx);
+    setOwnerPinInput('');
+    setPinError('');
+  };
+
+  const handleConfirmApproval = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jumboTxToApprove) return;
+    setIsVerifyingPin(true);
+    setPinError('');
+
+    try {
+      const isValid = await UserAccountService.verifyCurrentPin('owner', ownerPinInput.trim());
+      if (isValid) {
+        onApproveJumboTransaction(jumboTxToApprove.id);
+        setJumboTxToApprove(null);
+        setOwnerPinInput('');
+      } else {
+        setPinError('PIN Keamanan Owner salah. Transaksi jumbo tidak dapat disetujui.');
+      }
+    } catch (err) {
+      console.warn('Gagal verifikasi PIN approval jumbo:', err);
+      setPinError('Terjadi kendala verifikasi keamanan PIN.');
+    } finally {
+      setIsVerifyingPin(false);
+    }
+  };
 
   // Perhitungan Range Tanggal Aktif berdasarkan Mode Kalender
   const { activeStartDate, activeEndDate, activePeriodLabel, periodDescription } = useMemo(() => {
@@ -869,7 +906,7 @@ export function OwnerDashboard({
 
                 <button
                   type="button"
-                  onClick={() => onApproveJumboTransaction(tx.id)}
+                  onClick={() => handleOpenApprovalModal(tx)}
                   className="rounded-xl bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 px-4 py-2 text-xs font-extrabold text-white shadow-xs cursor-pointer transition-colors"
                 >
                   Approve Transaksi Jumbo (PIN Owner)
@@ -1251,7 +1288,7 @@ export function OwnerDashboard({
                             </span>
                           ) : (
                             <button
-                              onClick={() => onApproveJumboTransaction(tx.id)}
+                              onClick={() => handleOpenApprovalModal(tx)}
                               className="rounded bg-amber-500 hover:bg-amber-600 px-2 py-0.5 text-[10px] font-black text-white shadow-xs transition-colors cursor-pointer"
                             >
                               SETUJUI SEKARANG
@@ -1335,6 +1372,97 @@ export function OwnerDashboard({
           </div>
         )}
       </div>
+
+      {/* Modal Otorisasi PIN Owner untuk Transaksi Jumbo */}
+      {jumboTxToApprove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-400">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
+                    Otorisasi PIN Transaksi Jumbo
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                    Diperlukan persetujuan Owner untuk nilai di atas Rp 10.000.000
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setJumboTxToApprove(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Info Transaksi */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-zinc-400">No. Nota:</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-zinc-100">{jumboTxToApprove.invoiceNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-zinc-400">Penjual / Pengepul:</span>
+                <span className="font-semibold text-slate-800 dark:text-zinc-200">{jumboTxToApprove.sellerName}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-slate-200/60 dark:border-zinc-800">
+                <span className="text-slate-700 dark:text-zinc-300 font-bold">Total Pembayaran:</span>
+                <span className="font-numeric font-black text-amber-700 dark:text-amber-400 text-sm">
+                  Rp{jumboTxToApprove.totalAmount.toLocaleString('id-ID')}
+                </span>
+              </div>
+            </div>
+
+            {pinError && (
+              <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-600 dark:text-red-400 font-medium">
+                {pinError}
+              </div>
+            )}
+
+            <form onSubmit={handleConfirmApproval} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Masukkan PIN Keamanan Owner
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 dark:text-zinc-500 absolute left-3.5 top-3" />
+                  <input
+                    type="password"
+                    value={ownerPinInput}
+                    onChange={(e) => setOwnerPinInput(e.target.value)}
+                    placeholder="Masukkan PIN Owner (misal: 8888)"
+                    className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-black pl-10 pr-3.5 py-2.5 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-700 font-mono font-bold"
+                    autoFocus
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setJumboTxToApprove(null)}
+                  className="flex-1 rounded-xl border border-slate-300 dark:border-zinc-700 py-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isVerifyingPin || !ownerPinInput}
+                  className="flex-1 rounded-xl bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  {isVerifyingPin ? 'Memverifikasi...' : 'Verifikasi & Setujui'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

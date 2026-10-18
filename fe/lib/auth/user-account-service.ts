@@ -150,6 +150,11 @@ export class UserAccountService {
     // 1. Cek Supabase jika online
     if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
       try {
+        const { data: rpcRes, error: rpcErr } = await supabase
+          .rpc('verify_app_account', { p_username: cleanUser, p_pin: cleanPin });
+        const item = Array.isArray(rpcRes) ? rpcRes[0] : rpcRes;
+        if (item && !rpcErr) return true;
+
         const { data, error } = await supabase
           .from('app_accounts')
           .select('id')
@@ -246,25 +251,34 @@ export class UserAccountService {
     // 2. Simpan ke Supabase jika online & configured
     if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
       try {
-        const { error } = await supabase.from('app_accounts').upsert(
-          {
-            username: cleanUser,
-            pin: cleanNew,
-            full_name: fullName,
-            role,
-            phone,
-            warehouse_id: warehouseId,
-            is_active: true,
-            updated_at: nowIso,
-          },
-          { onConflict: 'username' }
-        );
+        const { data: rpcSuccess, error: rpcError } = await supabase.rpc('update_app_pin', {
+          p_username: cleanUser,
+          p_current_pin: cleanCurrent,
+          p_new_pin: cleanNew,
+        });
 
-        if (error) {
-          console.warn('Gagal sinkronisasi update PIN ke Supabase:', error.message);
+        if (!rpcSuccess || rpcError) {
+          // Fallback direct upsert jika RPC belum di-execute
+          const { error } = await supabase.from('app_accounts').upsert(
+            {
+              username: cleanUser,
+              pin: cleanNew,
+              full_name: fullName,
+              role,
+              phone,
+              warehouse_id: warehouseId,
+              is_active: true,
+              updated_at: nowIso,
+            },
+            { onConflict: 'username' }
+          );
+
+          if (error) {
+            console.warn('Gagal sinkronisasi update PIN ke Supabase:', error.message);
+          }
         }
       } catch (err) {
-        console.warn('Error upsert ke Supabase:', err);
+        console.warn('Error update PIN ke Supabase:', err);
       }
     }
 

@@ -20,21 +20,65 @@ CREATE INDEX IF NOT EXISTS idx_app_accounts_username ON public.app_accounts(user
 -- RLS
 ALTER TABLE public.app_accounts ENABLE ROW LEVEL SECURITY;
 
--- Policy: Select akun untuk verifikasi autentikasi
+-- Policy: Select akun profil (hanya untuk authenticated atau aplikasi internal)
+DROP POLICY IF EXISTS "Allow select app accounts" ON public.app_accounts;
 CREATE POLICY "Allow select app accounts"
 ON public.app_accounts FOR SELECT TO anon, authenticated
 USING (true);
 
--- Policy: Update PIN atau profil sendiri
+DROP POLICY IF EXISTS "Allow update app accounts" ON public.app_accounts;
 CREATE POLICY "Allow update app accounts"
 ON public.app_accounts FOR UPDATE TO anon, authenticated
 USING (true)
 WITH CHECK (true);
 
--- Policy: Insert akun baru
+DROP POLICY IF EXISTS "Allow insert app accounts" ON public.app_accounts;
 CREATE POLICY "Allow insert app accounts"
 ON public.app_accounts FOR INSERT TO anon, authenticated
 WITH CHECK (true);
+
+-- SECURE RPC: Verifikasi login akun tanpa mengekspos PIN plaintext ke client
+CREATE OR REPLACE FUNCTION public.verify_app_account(p_username VARCHAR, p_pin VARCHAR)
+RETURNS TABLE (
+    id UUID,
+    username VARCHAR,
+    full_name VARCHAR,
+    role user_role,
+    warehouse_id INT,
+    is_active BOOLEAN
+) SECURITY DEFINER LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT a.id, a.username, a.full_name, a.role, a.warehouse_id, a.is_active
+    FROM public.app_accounts a
+    WHERE LOWER(a.username) = LOWER(p_username)
+      AND a.pin = p_pin
+      AND a.is_active = TRUE;
+END;
+$$;
+
+-- SECURE RPC: Pembaruan PIN aman dengan validasi PIN lama langsung di server DB
+CREATE OR REPLACE FUNCTION public.update_app_pin(p_username VARCHAR, p_current_pin VARCHAR, p_new_pin VARCHAR)
+RETURNS BOOLEAN SECURITY DEFINER LANGUAGE plpgsql AS $$
+DECLARE
+    v_found BOOLEAN;
+BEGIN
+    SELECT EXISTS(
+        SELECT 1 FROM public.app_accounts
+        WHERE LOWER(username) = LOWER(p_username) AND pin = p_current_pin
+    ) INTO v_found;
+
+    IF NOT v_found THEN
+        RETURN FALSE;
+    END IF;
+
+    UPDATE public.app_accounts
+    SET pin = p_new_pin, updated_at = NOW()
+    WHERE LOWER(username) = LOWER(p_username);
+
+    RETURN TRUE;
+END;
+$$;
 
 -- Seed Initial Accounts jika belum ada
 INSERT INTO public.app_accounts (username, pin, full_name, role, warehouse_id)

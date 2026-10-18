@@ -18,12 +18,25 @@ export class OfflineSyncService {
    * Simpan transaksi timbangan (ScaleTransaction + Items + Update Stok Komoditas)
    */
   static async saveScaleTransaction(tx: ScaleTransaction): Promise<{ synced: boolean }> {
-    // 1. Simpan selalu ke IndexedDB lokal terlebih dahulu
+    // 1. Simpan selalu ke IndexedDB lokal terlebih dahulu (transaksi + akumulasi stok)
     try {
       await localDB.scaleTransactions.put({
         ...tx,
         syncStatus: false,
       });
+
+      // Tambah stok komoditas di IndexedDB lokal secara offline-first
+      if (tx.items && tx.items.length > 0) {
+        for (const item of tx.items) {
+          const lp = await localDB.products.get(item.productId);
+          if (lp) {
+            const added = Number(item.netWeightKg || 0);
+            await localDB.products.update(item.productId, {
+              currentStockKg: Number(((lp.currentStockKg || 0) + added).toFixed(2)),
+            });
+          }
+        }
+      }
     } catch (e) {
       console.warn('[Sync] Gagal simpan ke IndexedDB lokal:', e);
     }
@@ -77,18 +90,6 @@ export class OfflineSyncService {
           }
 
           for (const [prodId, weightToAdd] of stockIncrements.entries()) {
-            // Update IndexedDB lokal
-            try {
-              const lp = await localDB.products.get(prodId);
-              if (lp) {
-                await localDB.products.update(prodId, {
-                  currentStockKg: Number(((lp.currentStockKg || 0) + weightToAdd).toFixed(2)),
-                });
-              }
-            } catch (err) {
-              console.warn('[Sync] Gagal update stok produk lokal:', err);
-            }
-
             // Update Supabase Cloud
             const { data: p } = await supabase
               .from('products')
@@ -326,6 +327,14 @@ export class OfflineSyncService {
   static async saveFactorySale(sale: FactorySale): Promise<boolean> {
     try {
       await localDB.factorySales.put(sale);
+
+      // Kurangi stok produk lokal di IndexedDB secara offline-first
+      const lp = await localDB.products.get(sale.productId);
+      if (lp) {
+        await localDB.products.update(sale.productId, {
+          currentStockKg: Math.max(0, Number(((lp.currentStockKg || 0) - Number(sale.weightKg || 0)).toFixed(2))),
+        });
+      }
     } catch (e) {
       console.warn('[Sync] Gagal simpan factory sale ke Dexie:', e);
     }
@@ -349,18 +358,6 @@ export class OfflineSyncService {
         });
 
         if (!error) {
-          // Kurangi stok produk lokal di IndexedDB
-          try {
-            const lp = await localDB.products.get(sale.productId);
-            if (lp) {
-              await localDB.products.update(sale.productId, {
-                currentStockKg: Math.max(0, Number(((lp.currentStockKg || 0) - Number(sale.weightKg || 0)).toFixed(2))),
-              });
-            }
-          } catch (err) {
-            console.warn('[Sync] Gagal update stok produk lokal saat penjualan:', err);
-          }
-
           // Kurangi stok komoditas di Supabase
           const { data: p } = await supabase
             .from('products')
@@ -476,6 +473,12 @@ export class OfflineSyncService {
    * Simpan Slip Penggajian (Payroll)
    */
   static async savePayroll(payroll: PayrollRecord): Promise<boolean> {
+    try {
+      await localDB.payrolls.put(payroll);
+    } catch (e) {
+      console.warn('[Sync] Gagal simpan payroll ke Dexie:', e);
+    }
+
     if (typeof navigator !== 'undefined' && navigator.onLine && isSupabaseConfigured) {
       try {
         const { error } = await supabase.from('payrolls').upsert({

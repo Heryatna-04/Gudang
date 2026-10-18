@@ -180,6 +180,17 @@ export default function Home() {
         const localLoans = await localDB.employeeLoans.toArray();
         if (localLoans.length > 0) setLoans(localLoans);
 
+        const localEmps = await localDB.employees.toArray();
+        if (localEmps.length > 0) {
+          setEmployees((prev) => {
+            const ids = new Set(localEmps.map((e) => e.id));
+            return [...localEmps, ...prev.filter((e) => !ids.has(e.id))];
+          });
+        }
+
+        const localPayrolls = await localDB.payrolls.toArray();
+        if (localPayrolls.length > 0) setPayrolls(localPayrolls);
+
         const localOpex = await localDB.opexExpenses.toArray();
         if (localOpex.length > 0) setOpexList(localOpex);
 
