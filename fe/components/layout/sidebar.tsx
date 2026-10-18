@@ -12,11 +12,9 @@ import {
   Truck,
   Landmark,
   BadgeDollarSign,
-  LogOut,
-  ShieldCheck,
   UserPlus,
   KeyRound,
-  Radio,
+  ShieldCheck,
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -46,28 +44,24 @@ export function Sidebar({
       label: 'Dashboard',
       icon: LayoutDashboard,
       roleRequired: 'ALL',
-      description: 'Ringkasan komoditas & gudang',
     },
     {
       id: 'pos',
       label: 'Kasir Timbangan',
       icon: Scale,
       roleRequired: 'ALL',
-      description: 'Timbang & nota masuk',
     },
     {
       id: 'sales',
       label: 'Stok & Penjualan',
       icon: BadgeDollarSign,
       roleRequired: 'ALL',
-      description: 'Inventaris & kirim pabrik',
     },
     {
       id: 'shifts',
       label: 'Shift Kasir',
       icon: Clock,
       roleRequired: 'ALL',
-      description: 'Rekonsiliasi modal kasir',
       badge: 'Aktif',
     },
     {
@@ -75,49 +69,42 @@ export function Sidebar({
       label: 'Biaya Operasional',
       icon: Fuel,
       roleRequired: 'ALL',
-      description: 'Solar & kas kecil',
     },
     {
       id: 'mutations',
       label: 'Mutasi Stok',
       icon: Truck,
       roleRequired: 'ALL',
-      description: 'Surat jalan antar gudang',
     },
     {
       id: 'attendance',
       label: activeRole === 'OWNER' ? 'Absensi & Kasbon' : 'Absensi Karyawan',
       icon: Users,
       roleRequired: 'ALL',
-      description: activeRole === 'OWNER' ? 'Karyawan harian & kasbon' : 'Check-in pagi & malam',
     },
     {
       id: 'employees',
       label: 'Kelola Pegawai',
       icon: UserPlus,
       roleRequired: 'OWNER',
-      description: 'Master data pegawai',
     },
     {
       id: 'debts',
       label: 'Hutang & Piutang',
       icon: Landmark,
       roleRequired: 'OWNER',
-      description: 'Tempo pabrik & titip timbang',
     },
     {
       id: 'owner',
       label: 'Laba / Rugi',
       icon: BarChart3,
       roleRequired: 'OWNER',
-      description: 'Finansial & ekspor Excel',
     },
     {
       id: 'profile',
       label: 'Pengaturan',
       icon: KeyRound,
       roleRequired: 'ALL',
-      description: 'Profil & ganti PIN',
     },
   ];
 
@@ -129,14 +116,16 @@ export function Sidebar({
   });
 
   return (
-    <aside className={`w-full lg:w-64 rounded-[28px] p-5 flex flex-col justify-between text-white shrink-0 select-none shadow-xl transition-colors duration-200 ${
+    <aside className={`w-full lg:w-64 h-auto lg:h-[calc(100vh-3rem)] lg:sticky lg:top-6 rounded-[28px] p-5 flex flex-col justify-between text-white shrink-0 select-none shadow-xl transition-colors duration-200 overflow-hidden ${
       isDark
         ? 'bg-[#070b14] border border-slate-800/80 shadow-black/50'
         : 'bg-[#022c22] border border-emerald-950/20'
     }`}>
-      <div className="space-y-6">
+      {/* Bagian Atas: Brand & Nav Scrollable */}
+      <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+        
         {/* Brand Header */}
-        <div className="flex items-center gap-3 px-1">
+        <div className="flex items-center gap-3 px-1 pb-4 flex-shrink-0">
           <div className="w-10 h-10 rounded-2xl bg-white p-1.5 flex items-center justify-center border border-amber-500/40 shadow-sm shrink-0">
             <Image
               src="/logo.png"
@@ -157,7 +146,7 @@ export function Sidebar({
         </div>
 
         {/* Role Pill */}
-        <div className={`px-3 py-2 rounded-xl flex items-center justify-between text-xs border ${
+        <div className={`px-3 py-2 rounded-xl flex items-center justify-between text-xs border mb-3 flex-shrink-0 ${
           isDark
             ? 'bg-[#0f172a] border-slate-800 text-slate-300'
             : 'bg-emerald-900/60 border-emerald-700/40 text-emerald-200'
@@ -169,8 +158,8 @@ export function Sidebar({
           <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
         </div>
 
-        {/* Navigation Menu (Eduplex Style Curve & Pill) */}
-        <nav className="space-y-1.5 text-xs font-semibold">
+        {/* Navigation Menu (Scrollable if height overflow) */}
+        <nav className="space-y-1 text-xs font-semibold overflow-y-auto pr-1 flex-1">
           {visibleNavItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
@@ -179,7 +168,7 @@ export function Sidebar({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition-all cursor-pointer text-left ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all cursor-pointer text-left ${
                   isActive
                     ? 'bg-emerald-800 text-white font-extrabold shadow-md shadow-emerald-950/40'
                     : isDark
@@ -202,8 +191,8 @@ export function Sidebar({
         </nav>
       </div>
 
-      {/* Hardware Status Card di Bawah Sidebar */}
-      <div className={`mt-6 p-3.5 rounded-2xl border transition-colors ${
+      {/* Hardware Status Card di Bawah Sidebar (Sticky di Bawah) */}
+      <div className={`mt-3 p-3 rounded-2xl border transition-colors flex-shrink-0 ${
         isDark
           ? 'bg-[#0f172a] border-slate-800 text-slate-200'
           : 'bg-emerald-900/70 border-emerald-700/40 text-white'
